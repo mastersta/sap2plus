@@ -142,22 +142,24 @@ Adafruit_MCP23X17 mcp1;
           steps 3-15 follow:
 ========================================*/
 const long uinstr_template[128][13] PROGMEM {
+/* step 3      step 4          step 5          step 6          step 7          step 8          step 9         step 10         step 11         step 12         step 13         step 14         step 15 */
   {XO|AI,          IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0},  //0x00 TXA
-  {COH|MI,     COL|MI,       RO|MI|CE,          RO|AI,             IR,              0,              0,              0,              0,              0,              0,              0,              0},  //0x01 LDA m
-  {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0}   //0x02 LDA m,x
-  {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0}   //0x03 LDA i
-  {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0}   //0x04 TAX
-  {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0}   //0x05 LDX m
-  {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0}   //0x06 LDX i
+  {COH|MI,     COL|MI,       RO|BI|CE,         COH|MI,         COL|MI,       RO|MI|CE,          BO|MI,          RO|AI,             IR,              0,              0,              0,              0},  //0x01 LDA m
+  {COH|MI,     COL|MI,       RO|BI|CE,         COH|MI,         COL|MI,       RO|MI|CE,          EO|MI,          RO|AI,             IR,              0,              0,              0,              0},  //0x02 LDA m,x
+  {COH|MI,     COL|MI,       RO|AI|CE,             IR,              0,              0,              0,              0,              0,              0,              0,              0,              0}   //0x03 LDA i
+  {AO|XI,          IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0}   //0x04 TAX
+  {COH|MI,     COL|MI,       RO|BI|CE,         COH|MI,         COL|MI,       RO|MI|CE,          BO|MI,          RO|XI,             IR,              0,              0,              0,              0}   //0x05 LDX m
+  {COH|MI,     COL|MI,       RO|XI|CE,             IR,              0,              0,              0,              0,              0,              0,              0,              0,              0}   //0x06 LDX i
   {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0}   //0x07 STA m
   {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0}   //0x08 STA m,x
   {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0}   //0x09 STX m
-  {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0}   //0x0A STX m,a
+  {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0}   //0x0A INVALID
   {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0}   //0x0B INC m
   {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0}   //0x0C DEC m
   {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0}   //0x0D INC m,x
   {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0}   //0x0E DEC m,x
   {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0}   //0x0F INVALID
+/* step 3      step 4          step 5          step 6          step 7          step 8          step 9         step 10         step 11         step 12         step 13         step 14         step 15 */
   {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0}   //0x10 INVALID
   {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0}   //0x11 INVALID
   {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0}   //0x12 INVALID
@@ -174,6 +176,7 @@ const long uinstr_template[128][13] PROGMEM {
   {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0}   //0x1D INVALID
   {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0}   //0x1E INVALID
   {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0}   //0x1F INVALID
+/* step 3      step 4          step 5          step 6          step 7          step 8          step 9         step 10         step 11         step 12         step 13         step 14         step 15 */
   {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0}   //0x20 JMP
   {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0}   //0x21 JCS
   {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0}   //0x22 JCC
@@ -190,6 +193,7 @@ const long uinstr_template[128][13] PROGMEM {
   {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0}   //0x2D JRO x
   {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0}   //0x2E JNO x
   {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0}   //0x2F INVALID
+/* step 3      step 4          step 5          step 6          step 7          step 8          step 9         step 10         step 11         step 12         step 13         step 14         step 15 */
   {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0}   //0x30 PSA
   {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0}   //0x31 PLA
   {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0}   //0x32 PSX
@@ -206,6 +210,7 @@ const long uinstr_template[128][13] PROGMEM {
   {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0}   //0x3D INVALID
   {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0}   //0x3E INVALID
   {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0}   //0x3F INVALID
+/* step 3      step 4          step 5          step 6          step 7          step 8          step 9         step 10         step 11         step 12         step 13         step 14         step 15 */
   {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0}   //0x40 ADC x
   {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0}   //0x41 SBC x
   {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0}   //0x42 ADC m
@@ -222,6 +227,7 @@ const long uinstr_template[128][13] PROGMEM {
   {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0}   //0x4D SBX
   {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0}   //0x4E NOP
   {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0}   //0x4F NOP
+/* step 3      step 4          step 5          step 6          step 7          step 8          step 9         step 10         step 11         step 12         step 13         step 14         step 15 */
   {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0}   //0x50 ROL (SHL)
   {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0}   //0x51 ROR (SHR)
   {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0}   //0x52 ROL m (SHL m)
@@ -238,6 +244,7 @@ const long uinstr_template[128][13] PROGMEM {
   {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0}   //0x5D NND m
   {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0}   //0x5E NND m,x
   {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0}   //0x5F NND i
+/* step 3      step 4          step 5          step 6          step 7          step 8          step 9         step 10         step 11         step 12         step 13         step 14         step 15 */
   {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0}   //0x60 NOR x
   {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0}   //0x61 NOR m
   {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0}   //0x62 NOR m,x
@@ -254,6 +261,7 @@ const long uinstr_template[128][13] PROGMEM {
   {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0}   //0x6D NOP
   {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0}   //0x6E NOP
   {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0}   //0x6F NOP
+/* step 3      step 4          step 5          step 6          step 7          step 8          step 9         step 10         step 11         step 12         step 13         step 14         step 15 */
   {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0}   //0x70 JTI
   {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0}   //0x71 RTI
   {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0}   //0x72 NOP
