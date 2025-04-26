@@ -85,13 +85,13 @@ Adafruit_MCP23X17 mcp1;
 #define FO                 0x1C0000
 
 //misc decoder (controller 0/1)
-#define CE                 0x000000 //TODO
-#define CI                 0x000000 //TODO
-#define COH                0x000000 //TODO
-#define COL                0x000000 //TODO
-#define FI                 0x000000 //TODO
-#define FC                 0x000000 //TODO
-#define TD                 0x000000 //TODO
+#define CE                 0x008000
+#define CI                 0x010000
+#define COH                0x018000
+#define COL                0x020000
+#define FI                 0x028000
+#define FC                 0x030000
+#define TD                 0x038000
 
 //controller 1
 #define PI                 0x004000
@@ -113,21 +113,20 @@ Adafruit_MCP23X17 mcp1;
 #define ES                 0x000001
 
 //ALU functions
-#define AO                 0x000000 //TODO
-#define LADD               0x000000 //TODO
-#define LSUB               0x000000 //TODO
-#define LINC               0x000000 //TODO
-#define LDEC               0x000000 //TODO
-#define LSHL               0x000000 //TODO
-#define LONE               0x000000 //TODO
-#define LNEG               0x000000 //TODO
-#define LNOT               0x000000 //TODO
-#define LAND               0x000000 //TODO
-#define LORA               0x000000 //TODO
-#define LNND               0x000000 //TODO
-#define LNOR               0x000000 //TODO
-#define LXOR               0x000000 //TODO
-#define LXNR               0x000000 //TODO
+#define AO                 0x000004
+#define LADD               0x000008
+#define LSUB               0x000030
+#define LDEC               0x00007C
+#define LSHL               0x000064
+#define LONE               0x000062
+#define LNEG               0x00001C
+#define LNOT               0x000002
+#define LAND               0x00005A
+#define LORA               0x00000C
+#define LNND               0x000022
+#define LNOR               0x00000A
+#define LXOR               0x000032
+#define LXNR               0x00004A
 
 //active-low inputs for each controller, to be xor'd later
 #define ctrl0_bar          0b00000000
