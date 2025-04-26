@@ -114,6 +114,7 @@ Adafruit_MCP23X17 mcp1;
 
 //ALU functions
 #define AO                 0x000004
+#define BO                 0x000052
 #define LADD               0x000008
 #define LSUB               0x000030
 #define LDEC               0x00007C
