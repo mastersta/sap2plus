@@ -70,7 +70,7 @@ Adafruit_MCP23X17 mcp1;
 #define II                 0x200000
 #define MI                 0x400000
 #define RI                 0x600000
-#define DI                 0x800000
+#define IR                 0x800000
 #define AI                 0xA00000
 #define BI                 0xC00000
 #define XI                 0xE00000
@@ -133,9 +133,9 @@ Adafruit_MCP23X17 mcp1;
 
 /*========================================
          instruction microcode
-  step 0: COH|MI      [INT]:TODO      [INI]:PO|MI
-  step 1: COL|MI      [INT]:TODO      [INI]:LZRO|MI
-  step 2: RO|II|CE    [INT]:TODO      [INI]:LNEG|PI
+  step 0: COH|MI      [JTI]:MI        [INI]:PO|CI|JU
+  step 1: COL|MI      [JTI]:PO|MI|PD  [INI]:LZRO|CI|JU
+  step 2: RO|II|CE    [JTI]:COL|RI    [INI]:LNEG|PI
           steps 3-15 follow:
 ========================================*/
 const long uinstr_template[128][13] PROGMEM {
@@ -176,23 +176,23 @@ const long uinstr_template[128][13] PROGMEM {
 /*0x1E STA(zp,x)*/  {COH|MI,          COL|MI|CE,      RO|BI,          LZRO|LO|MI,     EO|MI,          COH|MI,         COL|MI|CE,      RO|BI,          COH|MI,         COL|MI|CE,      RO|MI,          BO|MI,          AO|RI},
 /*0x1F STA(zp),x*/  {COH|MI,          COL|MI|CE,      RO|BI,          LZRO|LO|MI,     BO|MI,          COH|MI,         COL|MI|CE,      RO|BI,          COH|MI,         COL|MI|CE,      RO|MI,          EO|MI,          AO|RI},
 /*                   step 3           step 4          step 5          step 6          step 7          step 8          step 9          step 10         step 11         step 12         step 13         step 14         step 15 */
-/*0x20 RTI      */  {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0},
-/*0x21 TSX      */  {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0},
-/*0x22 ROL      */  {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0},
-/*0x23 AND i    */  {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0},
-/*0x24 ORA abs  */  {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0},
+/*0x20 RTI      */  {MI|PI,           PO|MI|PI,       RO|CI|JU,       MI,             PO|MI|PI,       RO|CI|JU,       IR,             0,              0,              0,              0,              0,              0},
+/*0x21 TSX      */  {MI|PI,           PO|MI|PI,       RO|XI,          IR,             0,              0,              0,              0,              0,              0,              0,              0,              0},
+/*0x22 ROL      */  {LSHL|LO|BI,      BO|AI,          IR,             0,              0,              0,              0,              0,              0,              0,              0,              0,              0},
+/*0x23 AND i    */  {COH|MI,          COL|MI|CE,      RO|BI,          LAND|LO|AI,     IR,             0,              0,              0,              0,              0,              0,              0,              0},
+/*0x24 ORA abs  */  {COH|MI,          COL|MI|CE,      RO|BI,          COH|MI,         COL|MI|CE,      RO|MI,          BO|MI,          RO|BI,          LORA|LO|AI|FI,  FI|IR,          0,              0,              0},
 /*0x25 STA abs  */  {COH|MI,          COL|MI|CE,      RO|BI,          COH|MI,         COL|MI|CE,      RO|MI,          BO|MI,          AO|RI,          IR,             0,              0,              0,              0},
-/*0x26 ROL abs  */  {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0},
-/*0x27 BEZ      */  {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0},
+/*0x26 ROL abs  */  {COH|MI,          COL|MI|CE,      RO|BI,          COH|MI,         COL|MI|CE,      RO|MI,          BO|MI,          RO|AI,          LSHL|LO|RI,     IR,             0,              0,              0},
+/*0x27 BEZ      */  {COH|MI,          COL|MI|CE,      RO|BI,          COH|MI,         COL|MI|CE,      RO|CI|F1,       BO|CI|F1,       IR,             0,              0,              0,              0,              0},
 /*                   step 3           step 4          step 5          step 6          step 7          step 8          step 9          step 10         step 11         step 12         step 13         step 14         step 15 */
-/*0x28 STA zp   */  {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0},
-/*0x29 ROL zp   */  {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0},
-/*0x2A AND abs,x*/  {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0},
-/*0x2B ROL abs,x*/  {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0},
-/*0x2C AND zp,x */  {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0},
-/*0x2D ROL zp,x */  {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0},
-/*0x2E AND(zp,x)*/  {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0},
-/*0x2F AND(zp),x*/  {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0},
+/*0x28 STA zp   */  {COH|MI,          COL|MI|CE,      RO|BI,          LZRO|LO|MI,     BO|MI,          AO|RI,          IR,             0,              0,              0,              0,              0,              0},
+/*0x29 ROL zp   */  {COH|MI,          COL|MI|CE,      RO|BI,          LZRO|LO|MI,     EO|MI,          RO|AI,          LSHL|LO|RI,     IR,             0,              0,              0,              0,              0},
+/*0x2A AND abs,x*/  {COH|MI,          COL|MI|CE,      RO|BI,          COH|MI,         COL|MI|CE,      RO|MI,          EO|MI,          RO|BI,          LAND|LO|AI|FI,  FI|IR,          0,              0,              0},
+/*0x2B ROL abs,x*/  {COH|MI,          COL|MI|CE,      RO|BI,          COH|MI,         COL|MI|CE,      RO|MI,          EO|MI,          RO|AI,          LSHL|LO|RI,     IR,             0,              0,              0},
+/*0x2C AND zp,x */  {COH|MI,          COL|MI|CE,      RO|BI,          LZRO|LO|MI,     EO|MI,          RO|BI,          LAND|LO|AI|FI,  FI|IR,          0,              0,              0,              0,              0},
+/*0x2D ROL zp,x */  {COH|MI,          COL|MI|CE,      RO|BI,          LZRO|LO|MI,     EO|MI,          RO|BI,          LSHL|LO|AI|FI,  FI|IR,          0,              0,              0,              0,              0},
+/*0x2E AND(zp,x)*/  {COH|MI,          COL|MI|CE,      RO|BI,          LZRO|LO|MI,     EO|MI,          COH|MI,         COL|MI|CE,      RO|BI,          COH|MI,         COL|MI|CE,      RO|MI,          BO|MI,          LAND|LO|AI|FI}, //TODO: save a step to get the second FI
+/*0x2F AND(zp),x*/  {COH|MI,          COL|MI|CE,      RO|BI,          LZRO|LO|MI,     BO|MI,          COH|MI,         COL|MI|CE,      RO|BI,          COH|MI,         COL|MI|CE,      RO|MI,          EO|MI,          LAND|LO|AI|FI}, //TODO: save a step to get the second FI
 /*                   step 3           step 4          step 5          step 6          step 7          step 8          step 9          step 10         step 11         step 12         step 13         step 14         step 15 */
 /*0x30 CLF      */  {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0},
 /*0x31 TXS      */  {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0},
@@ -213,7 +213,7 @@ const long uinstr_template[128][13] PROGMEM {
 /*0x3F EOR(zp),x*/  {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0},
 /*                   step 3           step 4          step 5          step 6          step 7          step 8          step 9          step 10         step 11         step 12         step 13         step 14         step 15 */
 /*0x40 CLI      */  {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0},
-/*0x41 PHA      */  {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0},
+/*0x41 PHA      */  {MI,              PO|MI|PD,       AO|RI,          IR,             0,              0,              0,              0,              0,              0,              0,              0,              0},
 /*0x42 RTS      */  {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0},
 /*0x43 ORA i    */  {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0},
 /*0x44 NOP      */  {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0},
@@ -249,7 +249,7 @@ const long uinstr_template[128][13] PROGMEM {
 /*0x5F ADC(zp),x*/  {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0},
 /*                   step 3           step 4          step 5          step 6          step 7          step 8          step 9          step 10         step 11         step 12         step 13         step 14         step 15 */
 /*0x60 INV      */  {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0},
-/*0x61 PLA      */  {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0},
+/*0x61 PLA      */  {MI,              PO|MI|PI,       RO|AI,          IR,             0,              0,              0,              0,              0,              0,              0,              0,              0},
 /*0x62 NOP      */  {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0},
 /*0x63 ABC i    */  {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0},
 /*0x64 NOP      */  {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0},
@@ -268,7 +268,7 @@ const long uinstr_template[128][13] PROGMEM {
 /*                   step 3           step 4          step 5          step 6          step 7          step 8          step 9          step 10         step 11         step 12         step 13         step 14         step 15 */
 /*0x70 JMP      */  {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0},
 /*0x71 PLP      */  {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0},
-/*0x72 NOP      */  {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0},
+/*0x72 JTI      */  {MI,              COH|MI|PD,      0, /*TODO*/     0, /*NEED JV*/  0,              0,              0,              0,              0,              0,              0,              0,              0},
 /*0x73 CMP i    */  {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0},
 /*0x74 CPX i    */  {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0},
 /*0x75 CPX abs  */  {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0},
