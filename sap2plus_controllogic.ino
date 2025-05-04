@@ -134,13 +134,13 @@ Adafruit_MCP23X17 mcp1;
 /*========================================
          instruction microcode
   step 0: COH|MI      [JTI]:MI        [INI]:PO|CI|JU
-  step 1: COL|MI      [JTI]:PO|MI|PD  [INI]:LZRO|CI|JU
-  step 2: RO|II|CE    [JTI]:COL|RI    [INI]:LNEG|PI
+  step 1: COL|MI      [JTI]:PO|MI|PD  [INI]:LZRO|LO|CI|JU
+  step 2: RO|II|CE    [JTI]:COL|RI    [INI]:COH|MI
           steps 3-15 follow:
 ========================================*/
 const long uinstr_template[128][13] PROGMEM {
 /*                   step 3           step 4          step 5          step 6          step 7          step 8          step 9          step 10         step 11         step 12         step 13         step 14         step 15 */
-/*0x00 INI      */  {IR,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0},
+/*0x00 INI      */  {COL|MI|CE,       RO|BI,          LZRO|LO|MI,     LZRO|LO|MI,     BO|RI,          COH|MI,         COL|MI|CE,      RO|BI,          LZRO|LO|MI,     MI,             BO|RI,          IR,             0},
 /*0x01 TAX      */  {AO|XI,           IR,             0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0},
 /*0x02 INX      */  {BI,              EO|XI,          IR,             0,              0,              0,              0,              0,              0,              0,              0,              0,              0},
 /*0x03 LDA i    */  {COH|MI,          COL|MI|CE,      RO|AI,          IR,             0,              0,              0,              0,              0,              0,              0,              0,              0},
