@@ -70,10 +70,10 @@ Adafruit_MCP23X17 mcp1;
 #define II                 0x200000
 #define MI                 0x400000
 #define RI                 0x600000
-#define DI                 0x800000
-#define AI                 0xA00000
-#define BI                 0xC00000
-#define XI                 0xE00000
+#define AI                 0x800000
+#define BI                 0xA00000
+#define XI                 0xC00000
+#define CI                 0xE00000
 
 //output decoder (controller 0)
 #define RO                 0x040000
@@ -86,12 +86,12 @@ Adafruit_MCP23X17 mcp1;
 
 //misc decoder (controller 0/1)
 #define CE                 0x008000
-#define CI                 0x010000
-#define COH                0x018000
-#define COL                0x020000
-#define FI                 0x028000
-#define FC                 0x030000
-#define TD                 0x038000
+#define COH                0x010000
+#define COL                0x018000
+#define FI                 0x020000
+#define TD                 0x028000
+#define ZI                 0x030000
+#define ZO                 0x038000
 
 //controller 1
 #define PI                 0x004000
@@ -113,21 +113,18 @@ Adafruit_MCP23X17 mcp1;
 #define ES                 0x000001
 
 //ALU functions
-#define AO                 0x000004
-#define BO                 0x000052
-#define LADD               0x000008
-#define LSUB               0x000030
 #define LDEC               0x00007C
 #define LSHL               0x000064
-#define LONE               0x000062
-#define LNEG               0x00001C
-#define LNOT               0x000002
+#define LNEG               0x000062
 #define LAND               0x00005A
-#define LORA               0x00000C
-#define LNND               0x000022
-#define LNOR               0x00000A
+#define BO                 0x000052
 #define LXOR               0x000032
-#define LXNR               0x00004A
+#define LSUB               0x000030
+#define LZRO               0x00001A
+#define LORA               0x00000C
+#define LADD               0x000008
+#define AO                 0x000004
+#define LNOT               0x000002
 
 //active-low inputs for each controller, to be xor'd later
 #define ctrl0_bar          0b00000000
@@ -136,39 +133,41 @@ Adafruit_MCP23X17 mcp1;
 
 /*========================================
          instruction microcode
-  step 0: COH|MI      [JTI]:MI        [INI]:TC|CI|JU
-  step 1: COL|MI      [JTI]:PO|MI|PD  [INI]:LZRO|LO|CI|JU
-  step 2: RO|II|CE    [JTI]:COL|RI    [INI]:COH|MI
+  step 0: COH|MI      [JTI]:MI         [INI]:TD|CI|JU
+  step 1: COL|MI      [JTI]:PO|MI|PD   [INI]:LZRO|LO|CI|JU
+  step 2: RO|II|CE    [JTI]:COL|RI     [INI]:RO|CE
           steps 3-15 follow:
 ========================================*/
+
+/* JTI: push PC to stack, get 8000 and 8001 into PC, jump */
 const long uinstr_template[128][13] PROGMEM {
 
 /*                step 3          step 4          step 5          step 6          step 7          step 8          step 9          step A          step B          step C          step D          step E          step F          */
-/*00 INI      */ {COL|MI|CE,      RO|BI,          LZRO|LO|MI,     LZRO|LO|MI,     BO|RI,          COH|MI,         COL|MI|CE,      RO|BI,          LZRO|LO|MI,     MI,             BO|RI,          0,              0               },
+/*00 INI      */ {RO|CE,          0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
 /*01 NOP      */ {0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
-/*02          */ {0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
-/*03 CLF      */ {FC,             0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
+/*02 CLC      */ {FO|BI,          AO|ZI,          AI,             LNOT|LO|AI,     LAND|LO|FI,     0,              0,              0,              0,              0,              0,              0,              0               },
+/*03 CLF      */ {LZRO|LO|FI,     0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
 /*04 CLI      */ {TC,             0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
 /*05 SEI      */ {TD,             0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
-/*06 RTS      */ {0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
-/*07 JTI      */ {0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
+/*06 RTS      */ {MI|PI,          PO|MI,          RO|CI|JU,       MI|CE|PI,       PO|MI,          RO|CI|JU,       RO|CE,          RO|CE,          0,              0,              0,              0,              0               },
+/*07 JTI      */ {MI,             PO|MI|PD,       COH|RI,         TD|MI,          LZRO|LO|MI,     RO|BI,          TD|MI,          MI,             RO|CI|JU,       BO|CI|JU,       0,              0,              0               },
 /*                step 3          step 4          step 5          step 6          step 7          step 8          step 9          step A        step B            step C          step D          step E          step F          */
-/*08 RTI      */ {0,  /*TODO*/    0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
+/*08 RTI      */ {PI|MI,          PO|MI,          RO|CI,          PI|MI,          PO|MI,          RO|CI|TC,       0,              0,              0,              0,              0,              0,              0               },
 /*09          */ {0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
-/*0a PHA      */ {0,  /*TODO*/    0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
-/*0b PLA      */ {0,  /*TODO*/    0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
-/*0c TXS      */ {0,  /*TODO*/    0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
-/*0d TSX      */ {0,  /*TODO*/    0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
-/*0e PHP      */ {0,  /*TODO*/    0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
-/*0f PLP      */ {0,  /*TODO*/    0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
+/*0a PHA      */ {MI,             PO|MI|PD,       AO|RI,          0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
+/*0b PLA      */ {MI|PI,          PO|MI,          RO|AI,          0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
+/*0c TXS      */ {MI,             PO|MI|PD,       XO|RI,          0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
+/*0d TSX      */ {MI|PI,          PO|MI,          RO|XI,          0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
+/*0e PHP      */ {MI,             PO|MI|PD,       FO|RI,          0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
+/*0f PLP      */ {MI|PI,          PO|MI,          RO|FL,          0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
 /*                step 3          step 4          step 5          step 6          step 7          step 8          step 9          step A        step B            step C          step D          step E          step F          */
 /*10          */ {0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
-/*11 TAX      */ {0,  /*TODO*/    0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
+/*11 TAX      */ {AO|XI,          0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
 /*12          */ {0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
-/*13 TXA      */ {0,  /*TODO*/    0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
+/*13 TXA      */ {XO|AI,          0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
 /*14          */ {0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
 /*15          */ {0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
-/*16 INV      */ {0,  /*TODO*/    0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
+/*16 INV      */ {LNOT|LO|AI,     0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
 /*17          */ {0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
 /*                step 3          step 4          step 5          step 6          step 7          step 8          step 9          step A        step B            step C          step D          step E          step F          */
 /*18          */ {0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
@@ -216,17 +215,17 @@ const long uinstr_template[128][13] PROGMEM {
 /*3e ROL abs  */ {COH|MI,         COL|MI|CE,      RO|BI,          COH|MI,         COL|MI|CE,      RO|MI,          BO|MI,          AO|BI,          RO|AI,          LSHL|LO|AI|FI,  AO|RI|FI,       BO|AI,          0               },
 /*3f ROR abs  */ {COH|MI,         COL|MI|CE,      RO|BI,          COH|MI,         COL|MI|CE,      RO|MI,          BO|MI,          AO|BI,          RO|AI,          AR|RI|FI,       BO|AI|FI,       0,              0               },
 /*                step 3          step 4          step 5          step 6          step 7          step 8          step 9          step A        step B            step C          step D          step E          step F          */
-/*40 JMP abs  */ {0,  /*TODO*/    0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
-/*41 JSR abs  */ {0,  /*TODO*/    0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
-/*42 BCS abs  */ {0,  /*TODO*/    0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
-/*43 BCC abs  */ {0,  /*TODO*/    0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
-/*44 BEZ abs  */ {0,  /*TODO*/    0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
-/*45 BNZ abs  */ {0,  /*TODO*/    0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
-/*46 BMI abs  */ {0,  /*TODO*/    0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
-/*47 BPL abs  */ {0,  /*TODO*/    0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
+/*40 JMP abs  */ {COH|MI,         COL|MI|CE,      RO|BI,          COH|MI,         COL|MI|CE,      RO|CI|JU,       BO|CI|JU,       0,              0,              0,              0,              0,              0               },
+/*41 JSR abs  */ {MI,             PO|MI|PD,       COL|RI,         MI,             PO|MI|PD,       COH|RI,         COH|MI,         COL|MI|CE,      RO|BI,          COH|MI,         COL|MI|CE,      RO|CI|JU,       BO|CI|JU,       },
+/*42 BCS abs  */ {COH|MI,         COL|MI|CE,      RO|BI,          COH|MI,         COL|MI|CE,      RO|CI,          BO|CI|JU,       0,              0,              0,              0,              0,              0               },
+/*43 BCC abs  */ {COH|MI,         COL|MI|CE,      RO|BI,          COH|MI,         COL|MI|CE,      RO|CI|FV,       BO|CI|JU,       0,              0,              0,              0,              0,              0               },
+/*44 BEZ abs  */ {COH|MI,         COL|MI|CE,      RO|BI,          COH|MI,         COL|MI|CE,      RO|CI|F1,       BO|CI|JU,       0,              0,              0,              0,              0,              0               },
+/*45 BNZ abs  */ {COH|MI,         COL|MI|CE,      RO|BI,          COH|MI,         COL|MI|CE,      RO|CI|F1|FV,    BO|CI|JU,       0,              0,              0,              0,              0,              0               },
+/*46 BEQ abs  */ {COH|MI,         COL|MI|CE,      RO|BI,          COH|MI,         COL|MI|CE,      RO|CI|F2,       BO|CI|JU,       0,              0,              0,              0,              0,              0               },
+/*47 BNE abs  */ {COH|MI,         COL|MI|CE,      RO|BI,          COH|MI,         COL|MI|CE,      RO|CI|F2|FV,    BO|CI|JU,       0,              0,              0,              0,              0,              0               },
 /*                step 3          step 4          step 5          step 6          step 7          step 8          step 9          step A        step B            step C          step D          step E          step F          */
-/*48 BEQ abs  */ {0,  /*TODO*/    0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
-/*49 BNE abs  */ {0,  /*TODO*/    0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
+/*48 BMI abs  */ {COH|MI,         COL|MI|CE,      RO|BI,          COH|MI,         COL|MI|CE,      RO|CI|F1|F2,    BO|CI|JU,       0,              0,              0,              0,              0,              0               },
+/*49 BPL abs  */ {COH|MI,         COL|MI|CE,      RO|BI,          COH|MI,         COL|MI|CE,      RO|CI|F1|F2|FV, BO|CI|JU,       0,              0,              0,              0,              0,              0               },
 /*4a          */ {0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
 /*4b          */ {0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
 /*4c          */ {0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
@@ -246,11 +245,11 @@ const long uinstr_template[128][13] PROGMEM {
 /*58 ADC zp   */ {COH|MI,         COL|MI|CE,      RO|BI,          LZRO|LO|MI,     BO|MI,          RO|BI,          LADD|LO|AI|FI,  FI,             0,              0,              0,              0,              0               },
 /*59 SBC zp   */ {COH|MI,         COL|MI|CE,      RO|BI,          LZRO|LO|MI,     BO|MI,          RO|BI,          LSUB|LO|AI|FI,  FI,             0,              0,              0,              0,              0               },
 /*5a CMP zp   */ {COH|MI,         COL|MI|CE,      RO|BI,          LZRO|LO|MI,     BO|MI,          RO|BI,          AO|ZI,          LSUB|LC|LO|AI|FI,  ZO|AI|FI,    0,              0,              0,              0               },
-/*5b CPX zp   */ {COH|MI,         COL|MI|CE,      RO|BI,          LZRO|LO|MI,     BO|MI,          RO|, /*TODO*/   0,              0,              0,              0,              0,              0,              0               },
-/*5c INC zp   */ {COH|MI,         COL|MI|CE,      RO|BI,          LZRO|LO|MI,     BO|MI,          RO|, /*TODO*/   0,              0,              0,              0,              0,              0,              0               },
+/*5b CPX zp   */ {COH|MI,         COL|MI|CE,      RO|BI,          LZRO|LO|MI,     BO|MI,          RO|BI,          AO|ZI,          XO|AI,          LSUB|LC|LO|AI|  FI,AO|XI|FI,    ZO|AI           0,              0               },
+/*5c INC zp   */ {COH|MI,         COL|MI|CE,      RO|BI,          LZRO|LO|MI,     BO|MI,          AO|ZI,          RO|AI,          BI,             LADD|LC|LO|AI|FI,  FI|AO|RI,    ZO|AI           0,              0               },
 /*5d DEC zp   */ {COH|MI,         COL|MI|CE,      RO|BI,          LZRO|LO|MI,     BO|MI,          AO|BI,          RO|AI,          LDEC|LC|LO|AI|FI,  FI|AO|RI,    BO|AI,          0,              0,              0               },
-/*5e ROL zp   */ {COH|MI,         COL|MI|CE,      RO|BI,          LZRO|LO|MI,     BO|MI,          RO|, /*TODO*/   0,              0,              0,              0,              0,              0,              0               },
-/*5f ROR zp   */ {COH|MI,         COL|MI|CE,      RO|BI,          LZRO|LO|MI,     BO|MI,          RO|, /*TODO*/   0,              0,              0,              0,              0,              0,              0               },
+/*5e ROL zp   */ {COH|MI,         COL|MI|CE,      RO|BI,          LZRO|LO|MI,     BO|MI,          AO|BI,          RO|AI,          LSHL|LO|AI|FI,  AO|RI|FI,       BO|AI,          0,              0,              0               },
+/*5f ROR zp   */ {COH|MI,         COL|MI|CE,      RO|BI,          LZRO|LO|MI,     BO|MI,          AO|BI,          RO|AI,          AR|RI|FI,       BO|AI|FI,       0,              0,              0,              0               },
 /*                step 3          step 4          step 5          step 6          step 7          step 8          step 9          step A        step B            step C          step D          step E          step F          */
 /*60 LDA abs,x*/ {COH|MI,         COL|MI|CE,      RO|BI,          COH|MI,         COL|MI|CI,      RO|MI,          EO|MI,          RO|,            0,              0,              0,              0,              0               },
 /*61          */ {0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
@@ -263,12 +262,12 @@ const long uinstr_template[128][13] PROGMEM {
 /*                step 3          step 4          step 5          step 6          step 7          step 8          step 9          step A        step B            step C          step D          step E          step F          */
 /*68 ADC abs,x*/ {COH|MI,         COL|MI|CE,      RO|BI,          COH|MI,         COL|MI|CI,      RO|MI,          EO|MI,          RO|,            0,              0,              0,              0,              0               },
 /*69 SBC abs,x*/ {COH|MI,         COL|MI|CE,      RO|BI,          COH|MI,         COL|MI|CI,      RO|MI,          EO|MI,          RO|,            0,              0,              0,              0,              0               },
-/*6a CMP abs,x*/ {COH|MI,         COL|MI|CE,      RO|BI,          COH|MI,         COL|MI|CI,      RO|MI,          EO|MI,          RO|, /*TODO*/   0,              0,              0,              0,              0               },
+/*6a CMP abs,x*/ {COH|MI,         COL|MI|CE,      RO|BI,          COH|MI,         COL|MI|CE,      RO|MI,          EO|MI,          RO|BI,          AO|ZI,          LSUB|LC|LO|AI|FI,  ZO|AI|FI,    0,              0               },
 /*6b          */ {0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
-/*6c INC abs,x*/ {COH|MI,         COL|MI|CE,      RO|BI,          COH|MI,         COL|MI|CI,      RO|MI,          EO|MI,          RO|, /*TODO*/   0,              0,              0,              0,              0               },
+/*6c INC abs,x*/ {COH|MI,         COL|MI|CE,      RO|BI,          COH|MI,         COL|MI|CE,      RO|MI,          EO|MI,          AO|ZI,          RO|AI,          BI,             LADD|LC|LO|AI|FI,  FI|AO|RI,    ZO|AI           },
 /*6d DEC abs,x*/ {COH|MI,         COL|MI|CE,      RO|BI,          COH|MI,         COL|MI|CI,      RO|MI,          EO|MI,          RO|,            0,              0,              0,              0,              0               },
-/*6e ROL abs,x*/ {COH|MI,         COL|MI|CE,      RO|BI,          COH|MI,         COL|MI|CI,      RO|MI,          EO|MI,          RO|, /*TODO*/   0,              0,              0,              0,              0               },
-/*6f ROR abs,x*/ {COH|MI,         COL|MI|CE,      RO|BI,          COH|MI,         COL|MI|CI,      RO|MI,          EO|MI,          RO|, /*TODO*/   0,              0,              0,              0,              0               },
+/*6e ROL abs,x*/ {COH|MI,         COL|MI|CE,      RO|BI,          COH|MI,         COL|MI|CE,      RO|MI,          EO|MI,          AO|BI,          RO|AI,          LSHL|LO|AI|FI,  AO|RI|FI,       BO|AI,          0               },
+/*6f ROR abs,x*/ {COH|MI,         COL|MI|CE,      RO|BI,          COH|MI,         COL|MI|CE,      RO|MI,          EO|MI,          AO|BI,          RO|AI,          AR|RI|FI,       BO|AI|FI,       0,              0               },
 /*                step 3          step 4          step 5          step 6          step 7          step 8          step 9          step A        step B            step C          step D          step E          step F          */
 /*70 LDA zp,x */ {COH|MI,         COL|MI|CE,      RO|BI,          LZRO|LO|MI,     EO|MI,          RO|,            0,              0,              0,              0,              0,              0,              0               },
 /*71 LDX zp,x */ {COH|MI,         COL|MI|CE,      RO|BI,          LZRO|LO|MI,     EO|MI,          RO|,            0,              0,              0,              0,              0,              0,              0               },
@@ -281,12 +280,12 @@ const long uinstr_template[128][13] PROGMEM {
 /*                step 3          step 4          step 5          step 6          step 7          step 8          step 9          step A        step B            step C          step D          step E          step F          */
 /*78 ADC zp,x */ {COH|MI,         COL|MI|CE,      RO|BI,          LZRO|LO|MI,     EO|MI,          RO|,            0,              0,              0,              0,              0,              0,              0               },
 /*79 SBC zp,x */ {COH|MI,         COL|MI|CE,      RO|BI,          LZRO|LO|MI,     EO|MI,          RO|,            0,              0,              0,              0,              0,              0,              0               },
-/*7a CMP zp,x */ {COH|MI,         COL|MI|CE,      RO|BI,          LZRO|LO|MI,     EO|MI,          RO|,            0,              0,  /*TODO*/    0,              0,              0,              0,              0               },
+/*7a CMP zp,x */ {COH|MI,         COL|MI|CE,      RO|BI,          LZRO|LO|MI,     EO|MI,          RO|BI,          AO|ZI,          LSUB|LC|LO|AI|FI,  ZO|AI|FI,    0,              0,              0,              0               },
 /*7b          */ {0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
-/*7c INC zp,x */ {COH|MI,         COL|MI|CE,      RO|BI,          LZRO|LO|MI,     EO|MI,          RO|,            0,              0,  /*TODO*/    0,              0,              0,              0,              0               },
-/*7d DEC zp,x */ {COH|MI,         COL|MI|CE,      RO|BI,          LZRO|LO|MI,     EO|MI,          RO|,            0,              0,              0,              0,              0,              0,              0               },
-/*7e ROL zp,x */ {COH|MI,         COL|MI|CE,      RO|BI,          LZRO|LO|MI,     EO|MI,          RO|,            0,              0,  /*TODO*/    0,              0,              0,              0,              0               },
-/*7f ROR zp,x */ {COH|MI,         COL|MI|CE,      RO|BI,          LZRO|LO|MI,     EO|MI,          RO|,            0,              0,  /*TODO*/    0,              0,              0,              0,              0               },
+/*7c INC zp,x */ {COH|MI,         COL|MI|CE,      RO|BI,          LZRO|LO|MI,     EO|MI,          AO|ZI,          RO|AI,          BI,             LADD|LC|LO|AI|FI,  FI|AO|RI,    ZO|AI           0,              0               },
+/*7d DEC zp,x */ {COH|MI,         COL|MI|CE,      RO|BI,          LZRO|LO|MI,     EO|MI,          AO|BI,          RO|AI,          LDEC|LC|LO|AI|FI,  FI|AO|RI,    BO|AI,          0,              0,              0               },
+/*7e ROL zp,x */ {COH|MI,         COL|MI|CE,      RO|BI,          LZRO|LO|MI,     EO|MI,          AO|BI,          RO|AI,          LSHL|LO|AI|FI,  AO|RI|FI,       BO|AI,          0,              0,              0               },
+/*7f ROR zp,x */ {COH|MI,         COL|MI|CE,      RO|BI,          LZRO|LO|MI,     EO|MI,          AO|BI,          RO|AI,          AR|RI|FI,       BO|AI|FI,       0,              0,              0,              0               },
 
 };
 
