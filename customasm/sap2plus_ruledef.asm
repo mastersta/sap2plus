@@ -1,14 +1,20 @@
 
 #bankdef RAM {
+  #bits 8
   #addr 0x0000
   #size 0x8000
 }
 
 #bankdef ROM {
+  #bits 8
   #addr 0x8000
-  #size 0x0200
-  #outp 8 * 0x2
+  #size 0x2000
+  #outp 0
+  #fill
 }
+
+#bank ROM
+
 
 #ruledef {
 
@@ -27,7 +33,7 @@
   LDA {address: u16} => {      ;absolute addressing mode
     assert(address >= 0x0000)
     assert(address <= 0xffff)
-    0x30 @ address`16
+    0x30 @ le(address`16)
   }
 
   LDA {address: u8} => {      ;zero page addressing mode
@@ -39,7 +45,7 @@
   LDA {address: u16},X => {     ;indexed addressing mode
     assert(address >= 0x0000)
     assert(address <= 0xffff)
-    0x60 @ address`16
+    0x60 @ le(address`16)
   }
 
   LDA {address: u8},X => {      ;indexed zero page addressing mode
@@ -60,7 +66,7 @@
   LDX {address: u16} => {      ;absolute addressing mode
     assert(address >= 0x0000)
     assert(address <= 0xffff)
-    0x31 @ address`16
+    0x31 @ le(address`16)
   }
 
   LDX {address: u8} => {      ;zero page addressing mode
@@ -75,7 +81,7 @@
   STA {address: u16} => {      ;absolute addressing mode
     assert(address >= 0x0000)
     assert(address <= 0xffff)
-    0x32 @ address`16
+    0x32 @ le(address`16)
   }
 
   STA {address: u8} => {      ;zero page addressing mode
@@ -87,7 +93,7 @@
   STA {address: u16},X => {     ;indexed addressing mode
     assert(address >= 0x0000)
     assert(address <= 0xffff)
-    0x62 @ address`16
+    0x62 @ le(address`16)
   }
 
   STA {address: u8},X => {      ;indexed zero page addressing mode
@@ -102,7 +108,7 @@
   STX {address: u16} => {      ;absolute addressing mode
     assert(address >= 0x0000)
     assert(address <= 0xffff)
-    0x33 @ address`16
+    0x33 @ le(address`16)
   }
 
   STX {address: u8} => {      ;zero page addressing mode
@@ -148,7 +154,7 @@
   AND {address: u16} => {      ;absolute addressing mode
     assert(address >= 0x0000)
     assert(address <= 0xffff)
-    0x34 @ address`16
+    0x34 @ le(address`16)
   }
 
   AND {address: u8} => {      ;zero page addressing mode
@@ -160,7 +166,7 @@
   AND {address: u16},X => {     ;indexed addressing mode
     assert(address >= 0x0000)
     assert(address <= 0xffff)
-    0x64 @ address`16
+    0x64 @ le(address`16)
   }
 
   AND {address: u8},X => {      ;indexed zero page addressing mode
@@ -183,7 +189,7 @@
   ORA {address: u16} => {      ;absolute addressing mode
     assert(address >= 0x0000)
     assert(address <= 0xffff)
-    0x35 @ address`16
+    0x35 @ le(address`16)
   }
 
   ORA {address: u8} => {      ;zero page addressing mode
@@ -195,7 +201,7 @@
   ORA {address: u16},X => {     ;indexed addressing mode
     assert(address >= 0x0000)
     assert(address <= 0xffff)
-    0x65 @ address`16
+    0x65 @ le(address`16)
   }
 
   ORA {address: u8},X => {      ;indexed zero page addressing mode
@@ -217,7 +223,7 @@
   EOR {address: u16} => {      ;absolute addressing mode
     assert(address >= 0x0000)
     assert(address <= 0xffff)
-    0x36 @ address`16
+    0x36 @ le(address`16)
   }
 
   EOR {address: u8} => {      ;zero page addressing mode
@@ -229,7 +235,7 @@
   EOR {address: u16},X => {     ;indexed addressing mode
     assert(address >= 0x0000)
     assert(address <= 0xffff)
-    0x66 @ address`16
+    0x66 @ le(address`16)
   }
 
   EOR {address: u8},X => {      ;indexed zero page addressing mode
@@ -263,7 +269,7 @@
   ADC {address: u16} => {      ;absolute addressing mode
     assert(address >= 0x0000)
     assert(address <= 0xffff)
-    0x38 @ address`16
+    0x38 @ le(address`16)
   }
 
   ADC {address: u8} => {      ;zero page addressing mode
@@ -275,7 +281,7 @@
   ADC {address: u16},X => {     ;indexed addressing mode
     assert(address >= 0x0000)
     assert(address <= 0xffff)
-    0x68 @ address`16
+    0x68 @ le(address`16)
   }
 
   ADC {address: u8},X => {      ;indexed zero page addressing mode
@@ -298,7 +304,7 @@
   SBC {address: u16} => {      ;absolute addressing mode
     assert(address >= 0x0000)
     assert(address <= 0xffff)
-    0x39 @ address`16
+    0x39 @ le(address`16)
   }
 
   SBC {address: u8} => {      ;zero page addressing mode
@@ -310,7 +316,7 @@
   SBC {address: u16},X => {     ;indexed addressing mode
     assert(address >= 0x0000)
     assert(address <= 0xffff)
-    0x69 @ address`16
+    0x69 @ le(address`16)
   }
 
   SBC {address: u8},X => {      ;indexed zero page addressing mode
@@ -333,7 +339,7 @@
   CMP {address: u16} => {      ;absolute addressing mode
     assert(address >= 0x0000)
     assert(address <= 0xffff)
-    0x3A @ address`16
+    0x3A @ le(address`16)
   }
 
   CMP {address: u8} => {      ;zero page addressing mode
@@ -345,7 +351,7 @@
   CMP {address: u16},X => {     ;indexed addressing mode
     assert(address >= 0x0000)
     assert(address <= 0xffff)
-    0x6A @ address`16
+    0x6A @ le(address`16)
   }
 
   CMP {address: u8},X => {      ;indexed zero page addressing mode
@@ -368,7 +374,7 @@
   CPX {address: u16} => {      ;absolute addressing mode
     assert(address >= 0x0000)
     assert(address <= 0xffff)
-    0x3B @ address`16
+    0x3B @ le(address`16)
   }
 
   CPX {address: u8} => {      ;zero page addressing mode
@@ -387,7 +393,7 @@
   INC {address: u16} => {      ;absolute addressing mode
     assert(address >= 0x0000)
     assert(address <= 0xffff)
-    0x3C @ address`16
+    0x3C @ le(address`16)
   }
 
   INC {address: u8} => {      ;zero page addressing mode
@@ -399,7 +405,7 @@
   INC {address: u16},X => {     ;indexed addressing mode
     assert(address >= 0x0000)
     assert(address <= 0xffff)
-    0x6C @ address`16
+    0x6C @ le(address`16)
   }
 
   INC {address: u8},X => {      ;indexed zero page addressing mode
@@ -416,7 +422,7 @@
   DEC {address: u16} => {      ;absolute addressing mode
     assert(address >= 0x0000)
     assert(address <= 0xffff)
-    0x3D @ address`16
+    0x3D @ le(address`16)
   }
 
   DEC {address: u8} => {      ;zero page addressing mode
@@ -428,7 +434,7 @@
   DEC {address: u16},X => {     ;indexed addressing mode
     assert(address >= 0x0000)
     assert(address <= 0xffff)
-    0x6D @ address`16
+    0x6D @ le(address`16)
   }
 
   DEC {address: u8},X => {      ;indexed zero page addressing mode
@@ -453,7 +459,7 @@
   ROL {address: u16} => {      ;absolute addressing mode
     assert(address >= 0x0000)
     assert(address <= 0xffff)
-    0x3E @ address`16
+    0x3E @ le(address`16)
   }
 
   ROL {address: u8} => {      ;zero page addressing mode
@@ -465,7 +471,7 @@
   ROL {address: u16},X => {     ;indexed addressing mode
     assert(address >= 0x0000)
     assert(address <= 0xffff)
-    0x6E @ address`16
+    0x6E @ le(address`16)
   }
 
   ROL {address: u8},X => {      ;indexed zero page addressing mode
@@ -484,7 +490,7 @@
   ROR {address: u16} => {      ;absolute addressing mode
     assert(address >= 0x0000)
     assert(address <= 0xffff)
-    0x3F @ address`16
+    0x3F @ le(address`16)
   }
 
   ROR {address: u8} => {      ;zero page addressing mode
@@ -496,7 +502,7 @@
   ROR {address: u16},X => {     ;indexed addressing mode
     assert(address >= 0x0000)
     assert(address <= 0xffff)
-    0x6F @ address`16
+    0x6F @ le(address`16)
   }
 
   ROR {address: u8},X => {      ;indexed zero page addressing mode
@@ -515,61 +521,62 @@
   JMP {address: u16} => {      ;absolute addressing mode
     assert(address >= 0x0000)
     assert(address <= 0xffff)
-    0x40 @ address`16
+    0x40 @ le(address`16)
   }
+
 
   JSR {address: u16} => {      ;absolute addressing mode
     assert(address >= 0x0000)
     assert(address <= 0xffff)
-    0x41 @ address`16
+    0x41 @ le(address`16)
   }
 
   BCS {address: u16} => {      ;absolute addressing mode
     assert(address >= 0x0000)
     assert(address <= 0xffff)
-    0x42 @ address`16
+    0x42 @ le(address`16)
   }
 
   BCC {address: u16} => {      ;absolute addressing mode
     assert(address >= 0x0000)
     assert(address <= 0xffff)
-    0x43 @ address`16
+    0x43 @ le(address`16)
   }
 
   BEZ {address: u16} => {      ;absolute addressing mode
     assert(address >= 0x0000)
     assert(address <= 0xffff)
-    0x44 @ address`16
+    0x44 @ le(address`16)
   }
 
   BNZ {address: u16} => {      ;absolute addressing mode
     assert(address >= 0x0000)
     assert(address <= 0xffff)
-    0x45 @ address`16
+    0x45 @ le(address`16)
   }
 
   BEQ {address: u16} => {      ;absolute addressing mode
     assert(address >= 0x0000)
     assert(address <= 0xffff)
-    0x46 @ address`16
+    0x46 @ le(address`16)
   }
 
   BNE {address: u16} => {      ;absolute addressing mode
     assert(address >= 0x0000)
     assert(address <= 0xffff)
-    0x47 @ address`16
+    0x47 @ le(address`16)
   }
 
   BMI {address: u16} => {      ;absolute addressing mode
     assert(address >= 0x0000)
     assert(address <= 0xffff)
-    0x48 @ address`16
+    0x48 @ le(address`16)
   }
 
   BPL {address: u16} => {      ;absolute addressing mode
     assert(address >= 0x0000)
     assert(address <= 0xffff)
-    0x49 @ address`16
+    0x49 @ le(address`16)
   }
 
 
@@ -614,12 +621,17 @@
 
 }
 
+INTVEC = 0x9F00
+RESETVEC = 0x80FF
+
+#addr RESETVEC ;testing reset vector placement
+
 
 load_a:
   LDA #$aa
-  LDA $aaaa
+  LDA $aaff
   LDA $aa
-  LDA $aaaa,X
+  LDA $aaff,X
   LDA $aa,X
 
 load_x:
@@ -729,7 +741,7 @@ returns:
   RTS
 
 jumps:
-  JMP jumps
+  JMP load_a
   JSR jumps
   BCS jumps
   BCC jumps
@@ -751,3 +763,7 @@ interrupts:
 misc:
   NOP
 
+#addr INTVEC
+int:        ;testing interrupt placement
+  LDA #05
+  RTI
