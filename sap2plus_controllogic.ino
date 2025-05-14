@@ -143,7 +143,7 @@ Adafruit_MCP23X17 mcp1;
 const long uinstr_template[128][13] PROGMEM {
 
 /*                step 3          step 4          step 5          step 6          step 7          step 8          step 9          step A          step B          step C          step D          step E          step F          */
-/*00 INI      */ {RO|CE,          0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
+/*00 INI      */ {RO|CE,          COH|MI,         COL|MI|CE,      RO|BI,          COH|MI,         COL|MI,         RO|CI|JU,       BO|CI|JU|TC,    0,              0,              0,              0,              0               },
 /*01 NOP      */ {0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
 /*02 CLC      */ {FO|BI,          AO|ZI,          AI,             LNOT|LO|AI,     LAND|LO|FI,     0,              0,              0,              0,              0,              0,              0,              0               },
 /*03 CLF      */ {LZRO|LO|FI,     0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
