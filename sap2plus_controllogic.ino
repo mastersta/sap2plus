@@ -42,7 +42,7 @@
 #define PEpin_FV           13
 #define PEpin_F1           14
 #define PEpin_F2           15
-
+                
 //MCP23017_1
 #define PEpin_FL           0
 #define PEpin_L3           1
@@ -329,25 +329,25 @@ void setup() {
   mcp0.pinMode(PEpin_Z0,      OUTPUT);
   mcp0.pinMode(PEpin_Z1,      OUTPUT);
   mcp0.pinMode(PEpin_Z2,      OUTPUT);
-  mcp0.pinMode(PEpin_FI,      OUTPUT);
-  mcp0.pinMode(PEpin_FC,      OUTPUT);
-  mcp0.pinMode(PEpin_L3,      OUTPUT);
-  mcp0.pinMode(PEpin_L2,      OUTPUT);
-  mcp0.pinMode(PEpin_L1,      OUTPUT);
-  mcp0.pinMode(PEpin_L0,      OUTPUT);
-  mcp0.pinMode(PEpin_LC,      OUTPUT);
-  mcp0.pinMode(PEpin_LM,      OUTPUT);
-  mcp0.pinMode(PEpin_ES,      OUTPUT);
-  mcp0.pinMode(PEpin_IR,      OUTPUT);
+  mcp0.pinMode(PEpin_T0,      OUTPUT);
+  mcp0.pinMode(PEpin_T1,      OUTPUT);
+  mcp0.pinMode(PEpin_T2,      OUTPUT);
+  mcp0.pinMode(PEpin_PI,      OUTPUT);
+  mcp0.pinMode(PEpin_PD,      OUTPUT);
+  mcp0.pinMode(PEpin_TC,      OUTPUT);
+  mcp0.pinMode(PEpin_JU,      OUTPUT);
+  mcp0.pinMode(PEpin_FV,      OUTPUT);
+  mcp0.pinMode(PEpin_F1,      OUTPUT);
+  mcp0.pinMode(PEpin_F2,      OUTPUT);
     
-  mcp1.pinMode(PEpin_PI,      OUTPUT);
-  mcp1.pinMode(PEpin_PD,      OUTPUT);
-  mcp1.pinMode(PEpin_DI,      OUTPUT);
-  mcp1.pinMode(PEpin_CE,      OUTPUT);
-  mcp1.pinMode(PEpin_CIH,     OUTPUT);
-  mcp1.pinMode(PEpin_CIL,     OUTPUT);
-  mcp1.pinMode(PEpin_COH,     OUTPUT);
-  mcp1.pinMode(PEpin_COL,     OUTPUT);
+  mcp1.pinMode(PEpin_FL,      OUTPUT);
+  mcp1.pinMode(PEpin_L3,      OUTPUT);
+  mcp1.pinMode(PEpin_L2,      OUTPUT);
+  mcp1.pinMode(PEpin_L1,      OUTPUT);
+  mcp1.pinMode(PEpin_L0,      OUTPUT);
+  mcp1.pinMode(PEpin_LC,      OUTPUT);
+  mcp1.pinMode(PEpin_LM,      OUTPUT);
+  mcp1.pinMode(PEpin_ES,      OUTPUT);
   mcp1.pinMode(PEpin_data0,   INPUT);
   mcp1.pinMode(PEpin_data1,   INPUT);
   mcp1.pinMode(PEpin_data2,   INPUT);
@@ -376,6 +376,8 @@ void loop() {
          bool autoSpeed              = digitalRead(pin_sysclockSpeed);
          bool pulseActive            = digitalRead(pin_sysclockPulse);
          int  currentMillis          = millis();
+         long controlLongOut         = 0;
+         bool controlWritten         = false;
 
   //build instruction byte
   for(char i = 7; i >= 0; i--) {
@@ -386,20 +388,73 @@ void loop() {
 
   //if clock is currently low
   if (!sysclockOut) {
-    //TODO: set outputs based on table
-    /*
-      if step = 0: COH|MI
-      if step = 1: COL|MI
-      if step = 2: RO|II|CE
-      if step = 3-15: from table
 
-      write mcp0 GPIOA (controller 0: Y0-FC)
-      write mcp0 GPIOB (controller 1: L3-IR)
-      write mcp1 GPIOA (controller 2: PI-COL)
-        --I might have these reversed?--
-        --I should probably only do this once rather than repeatedly while the clock is low--
-    */
-    
+
+    //STEP 0
+    if stepCtr = 0 {
+
+      if instructionIn = 0x07 { //JTI
+        controlLongOut = MI;
+
+      } else if instructionIn = 0x00 { //INI
+        controlLongOut = TD|CI|JU;
+
+      } else {
+        controlLongOut = COH|MI;
+
+      }
+
+
+    //STEP 1
+    } else if stepCtr = 1 {
+
+      if instructionIn = 0x07 { //JTI
+        controlLongOut = PO|MI|PD;
+
+      } else if instructionIn = 0x00 { //INI
+        controlLongOut = LZRO|LO|CI|JU;
+
+      } else {
+        controlLongOut = RO|CE;
+
+      }
+
+
+    //STEP 2
+    } else if stepCtr = 2 {
+
+      if instructionIn = 0x07 { //JTI
+        controlLongOut = COL|RI;
+
+      } else if instructionIn = 0x00 { //INI
+        controlLongOut = RO|CE;
+
+      } else {
+        controlLongOut = RO|II|CE;
+
+      }
+
+
+    //STEPS 3-15
+    } else {
+      controlLongOut = uinstr_table[instructionIn][stepCtr - 3];
+      
+    }
+
+
+    uint8_t controlOutByte0 = controlLongOut;
+    uint8_t controlOutByte1 = controlLongOut >> 8;
+    uint8_t controlOutByte2 = controlLongOut >> 16;
+
+    if !controlWritten {
+      mcp0.writeGPIOA(controlOutByte0);
+      mcp0.writeGPIOB(controlOutByte1);
+      mcp1.writeGPIOA(controlOutByte2);
+      controlWritten = true;
+    }
+
+
+
     //if auto:
     if (autoMode) {
     
@@ -423,6 +478,8 @@ void loop() {
       }
     }
 
+
+
   //if clock is currently high
   } else {
     //if !butStabilized and busStabilizedTimer <= millis:
@@ -432,13 +489,12 @@ void loop() {
       Serial.print("\t");
       
       //print current step number
-      Serial.print(stepCtr, HEX);
+      Serial.print(stepCtr, DEC);
       Serial.print("\t");
       
       //get current bus value & print
       busValuesIn = mcp1.readGPIOB();
-      Serial.print(busValuesIn, HEX);
-      Serial.print("\t");
+      Serial.println(busValuesIn, HEX);
       
       busStabilized = true;
     }
