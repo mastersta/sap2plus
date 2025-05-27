@@ -1,7 +1,7 @@
 #include <Adafruit_MCP23X17.h>
 #include <Adafruit_MCP23XXX.h>
 
-#define debounce           10  //how long to wait for debounce of switch
+#define stabilization      10  //how long to wait for bus stabilization
 
 
 //pins to collect data bus values
@@ -132,25 +132,25 @@ Adafruit_MCP23X17 mcp1;
 #define ctrl2_bar          0b00000000
 
 /*========================================
-         instruction microcode
-  step 0: COH|MI      [JTI]:MI         [INI]:TD|CI|JU
-  step 1: COL|MI      [JTI]:PO|MI|PD   [INI]:LZRO|LO|CI|JU
-  step 2: RO|II|CE    [JTI]:COL|RI     [INI]:RO|CE
-          steps 3-15 follow:
+  instruction microcode
+  step 0: COH|MI
+  step 1: COL|MI
+  step 2: RO|II|CE
+  steps 3-15 follow:
 ========================================*/
 
 /* JTI: push PC to stack, get 8000 and 8001 into PC, jump */
 const long uinstr_template[128][13] PROGMEM {
 
 /*                step 3          step 4          step 5          step 6          step 7          step 8          step 9          step A          step B          step C          step D          step E          step F          */
-/*00 INI      */ {RO|CE,          COH|MI,         COL|MI|CE,      RO|BI,          COH|MI,         COL|MI,         RO|CI|JU,       BO|CI|JU|TC,    0,              0,              0,              0,              0               },
+/*00 INI      */ {TD|CI|JU,       LZRO|LO|CI|JU,  RO|CE,          RO|CE,          COH|MI,         COL|MI|CE,      RO|BI,          COH|MI,         COL|MI,         RO|CI|JU,       BO|CI|JU|TC,    0,              0               },
 /*01 NOP      */ {0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
 /*02 CLC      */ {FO|BI,          AO|ZI,          AI,             LNOT|LO|AI,     LAND|LO|FI,     0,              0,              0,              0,              0,              0,              0,              0               },
 /*03 CLF      */ {LZRO|LO|FI,     0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
 /*04 CLI      */ {TC,             0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
 /*05 SEI      */ {TD,             0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
 /*06 RTS      */ {MI|PI,          PO|MI,          RO|CI|JU,       MI|CE|PI,       PO|MI,          RO|CI|JU,       RO|CE,          RO|CE,          0,              0,              0,              0,              0               },
-/*07 JTI      */ {MI,             PO|MI|PD,       COH|RI,         TD|MI,          LZRO|LO|MI,     RO|BI,          TD|MI,          MI,             RO|CI|JU,       BO|CI|JU,       0,              0,              0               },
+/*07 JTI      */ {MI,             PO|MI|PD,       COL|RI,         MI,             PO|MI|PD,       COH|RI,         TD|MI,          LZRO|LO|MI,     RO|BI,          TD|MI,          MI,             RO|CI|JU,       BO|CI|JU|TC     },
 /*                step 3          step 4          step 5          step 6          step 7          step 8          step 9          step A        step B            step C          step D          step E          step F          */
 /*08 RTI      */ {PI|MI,          PO|MI,          RO|CI,          PI|MI,          PO|MI,          RO|CI|TC,       0,              0,              0,              0,              0,              0,              0               },
 /*09          */ {0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
@@ -360,161 +360,255 @@ void setup() {
   Serial.println("MCPs initialized");
 }
 
+
+
+  /*
+  Sets mcp outputs based on provided instruction
+  */
+void setOutputs(uint8_t instruction, uint8_t step) {
+
+  uint32_t outputLong = 0;
+
+  switch(step) {
+
+    case 0:
+      outputLong = COH|MI;
+      break;
+
+    case 1:
+      outputLong = COL|MI;
+      break;
+
+    case 2:
+      if(instruction > 0) {
+        outputLong = RO|II|CE;
+      } else {
+        outputLong = RO;
+      }
+      break;
+
+    case 3:
+    case 4:
+    case 5:
+    case 6:
+    case 7:
+    case 8:
+    case 9:
+    case 10:
+    case 11:
+    case 12:
+    case 13:
+    case 14:
+    case 15:
+      outputLong = uinstr_table[instruction][step - 3];
+  }
+
+  uint8_t output0 = outputLong;
+  uint8_t output1 = outputLong >> 8;
+  uint8_t output2 = outputLong >> 16;
+
+  mcp0.writeGPIOA(output0);
+  mcp0.writeGPIOB(output1);
+  mcp1.writeGPIOA(output2);
+
+}
+
+//function to increment and wrap
+uint8_t incrementWrap (uint8_t inputVal, uint8_t wrap) { return (inputVal++) & wrap; };
+
+
+//function to print current instruction, step, and bus values to serial
+void printCPUState(uint8_t instruction, uint8_t step) {
+
+  uint8_t busValue = mcp1.readGPIOB();
+
+  Serial.print(instruction, HEX);
+  Serial.print("\t");
+
+  Serial.print(step, DEC);
+  Serial.print("\t");
+
+  Serial.println(busValue, HEX);
+}
+
+
+//function to get current instruction
+uint8_t getInstruction () {
+  uint8_t instructionOut = 0;
+
+  instructionOut = instructionIn | digitalRead(pin_instr0);
+  instructionOut = instructionIn | (digitalRead(pin_instr1) * 0x02);
+  instructionOut = instructionIn | (digitalRead(pin_instr2) * 0x04);
+  instructionOut = instructionIn | (digitalRead(pin_instr3) * 0x08);
+  instructionOut = instructionIn | (digitalRead(pin_instr4) * 0x0F);
+  instructionOut = instructionIn | (digitalRead(pin_instr5) * 0x20);
+  instructionOut = instructionIn | (digitalRead(pin_instr6) * 0x40);
+  instructionOut = instructionIn | (digitalRead(pin_instr7) * 0x80);
+
+  return instructionOut;
+}
+
+
 void loop() {
 
-  const  int  stablizationWait       = 10;
-  static char stepCtr                = 0;
-  static bool waitForPulse           = true;
-  static bool busStabilized          = false;
-  static int  busStabilizedTimer     = 0;
-  static bool sysclockOut            = false;
-  static int  nextClockTime          = 0;
-  static bool programmingMode        = false;
-         char instructionIn          = 0;
-         char busValuesIn            = 0;
-         bool autoMode               = digitalRead(pin_sysclockMode);
-         bool autoSpeed              = digitalRead(pin_sysclockSpeed);
-         bool pulseActive            = digitalRead(pin_sysclockPulse);
-         int  currentMillis          = millis();
-         long controlLongOut         = 0;
-         bool controlWritten         = false;
-
-  //build instruction byte
-  for(char i = 7; i >= 0; i--) {
-    instructionIn = instructionIn & digitalRead(i + 2); //instruction pins start at 9 and go down to 2
-    instructionIn = instructionIn << 1;
-  }
-
-
-  //if clock is currently low
-  if (!sysclockOut) {
-
-
-    //STEP 0
-    if stepCtr = 0 {
-
-      if instructionIn = 0x07 { //JTI
-        controlLongOut = MI;
-
-      } else if instructionIn = 0x00 { //INI
-        controlLongOut = TD|CI|JU;
-
-      } else {
-        controlLongOut = COH|MI;
-
-      }
-
-
-    //STEP 1
-    } else if stepCtr = 1 {
-
-      if instructionIn = 0x07 { //JTI
-        controlLongOut = PO|MI|PD;
-
-      } else if instructionIn = 0x00 { //INI
-        controlLongOut = LZRO|LO|CI|JU;
-
-      } else {
-        controlLongOut = RO|CE;
-
-      }
-
-
-    //STEP 2
-    } else if stepCtr = 2 {
-
-      if instructionIn = 0x07 { //JTI
-        controlLongOut = COL|RI;
-
-      } else if instructionIn = 0x00 { //INI
-        controlLongOut = RO|CE;
-
-      } else {
-        controlLongOut = RO|II|CE;
-
-      }
-
-
-    //STEPS 3-15
-    } else {
-      controlLongOut = uinstr_table[instructionIn][stepCtr - 3];
-      
-    }
-
-
-    uint8_t controlOutByte0 = controlLongOut;
-    uint8_t controlOutByte1 = controlLongOut >> 8;
-    uint8_t controlOutByte2 = controlLongOut >> 16;
-
-    if !controlWritten {
-      mcp0.writeGPIOA(controlOutByte0);
-      mcp0.writeGPIOB(controlOutByte1);
-      mcp1.writeGPIOA(controlOutByte2);
-      controlWritten = true;
-    }
+  static uint8_t   runMode             = 0;
+  static uint8_t   stepCtr             = 0;
+  static bool      clockOut            = 0;
+         uint8_t   instructionIn       = getInstruction();
+         bool      clockMode           = digitalRead(pin_sysclockMode);
+         bool      clockPulse          = digitalRead(pin_sysclockPulse);
+         int       clockSpeed          = digitalRead(pin_sysclockSpeed);
+         uint32_t  currentMillis       = millis();
+  static uint32_t  busStabilizedTime   = (currentMillis + stabilization);
+  static uint32_t  nextTransition      = (currentMillis + stabilization + clockSpeed);
+  static bool      outputsSetFlag      = false;
+  static bool      printFlag           = false;
 
 
 
-    //if auto:
-    if (autoMode) {
-    
-    //  if we're in auto and we haven't run yet, wait for a pulse before we do anything
-      if (waitForPulse) {
-        waitForPulse = digitalRead(pin_sysclockPulse);
-  
-      } else {
-        //if we've already started running, wait for time to pulse the clock high
-        if (nextClockTime <= currentMillis) {
-          nextClockTime = currentMillis + autoSpeed;
-          sysclockOut = HIGH;
-        }
-      }
+  if(runMode < 2) {
+    if(clockMode) { set runMode to 2; }
 
-    //if manual:
-    } else {
-      if (digitalRead(pin_sysclockPulse)) {
-        delay(debounce); //debounce
-        sysclockOut = HIGH;
-      }
-    }
-
-
-
-  //if clock is currently high
-  } else {
-    //if !butStabilized and busStabilizedTimer <= millis:
-    if ((!busStabilized) && (busStabilizedTimer <= currentMillis)) {
-      //print instruction (including flags)
-      Serial.print(instructionIn, HEX);
-      Serial.print("\t");
-      
-      //print current step number
-      Serial.print(stepCtr, DEC);
-      Serial.print("\t");
-      
-      //get current bus value & print
-      busValuesIn = mcp1.readGPIOB();
-      Serial.println(busValuesIn, HEX);
-      
-      busStabilized = true;
-    }
-    
-    if ((busStabilized) && (autoMode)) {
-      if (nextClockTime <= currentMillis) {
-        nextClockTime = currentMillis + autoSpeed;
-        sysclockOut = LOW;
-      }
-    }
-
-    if ((busStabilized) && (!autoMode)) {
-      if (!digitalRead(pin_sysclockPulse)) {
-        delay(debounce); //debounce
-        sysclockOut = LOW;
-      }
-    }
+  } else if(runMode == 2 || runMode == 3) {
+    if(!clockMode) { set runMode to 0; }
 
   }
 
-  digitalWrite(pin_sysclockOut, sysclockOut);
-    
+
+
+  switch(runMode) {
+
+    /*-----CLOCK MANUAL, LOW-----
+      Sets clock low
+      Sets outputs on first pass
+      Exits if pulse pin is pressed
+    */
+    case 0:
+      clockOut = 0;
+
+      if(!outputsSetFlag) {
+        stepCtr = incrementWrap(stepCtr, 0xF);
+        setOutputs(instructionIn, stepCtr);
+        outputsSetFlag = true;
+      }
+
+      if(clockPulse) { runMode = 1; }
+      break;
+
+
+
+    /*-----CLOCK MANUAL, HIGH-----
+      Sets clock high
+      Outputs CPU state to serial
+      Exits if pulse pin is released
+    */
+    case 1:
+      clockOut = 1;
+
+      if((currentMillis > busStabilizedTime) && !printFlag) {
+        printCPUState();
+        printFlag = true;
+      }
+
+      if(!clockPulse) {
+        runMode = 0;
+        outputsSetFlag = false;
+      }
+      break;
+
+
+
+    /*-----CLOCK AUTO, WAITING FOR RUN-----
+      Sets clock low
+      Exits if pulse pin is pressed
+    */
+    case 2:
+      clockOut = 0;
+
+      if(clockPulse) { runMode = 3; }
+      break;
+
+
+
+    /*-----CLOCK AUTO, LOW-----
+      Sets clock low
+      Sets outputs on first pass
+      Exits when time for clock high transition
+    */
+    case 3:
+      clockOut = 0;
+
+      if(!outputsSetFlag) {
+        stepCtr = incrementWrap(stepCtr, 0xF);
+        setOutputs(instructionIn, stepCtr);
+        outputsSetFlag = true;
+      }
+
+      if(currentMillis > nextTransition) {
+        nextTransition = currentMillis + clockSpeed;
+        runMode = 4;
+      }
+      break;
+
+
+
+    /*-----CLOCK AUTO, HIGH-----
+      Sets clock high
+      Outputs CPU state to serial
+      Exits when time for clock low transition
+    */
+    case 4:
+      clockOut = 1;
+      
+      if((currentMillis > busStabilizedTime) && !printFlag) {
+        printCPUState();
+        printFlag = true;
+      }
+
+      if(currentMillis > nextTransition) {
+        nextTransition = currentMillis + clockSpeed;
+        runMode = 3;
+      }
+
+      break;
+
+
+
+    /*-----PROGRAMMING MODE, WAITING FOR DATA-----
+      Entered when PROG sent via serial, only available in modes 0 or 2
+      Sets clock low
+      Waits for 2 hex byte address and 16 hex byte data from serial monitor
+      Moves to mode 6 to write data at address
+      Exits when instruction and all 16 bytes have been received
+    */
+    case 5:
+
+
+
+    /*-----PROGRAMMING MODE, WRITE DATA-----
+      Pulses clock twice while outputting address to MAR
+      Pulses clock 16 times while writing data to RAM
+      Returns to mode 5 when complete
+    */
+    case 6:
+
+
+
+    /*-----ROM READ MODE-----
+      Activates on RORD command from serial
+      Loops through entire ROM and outputs to serial
+    */
+    case 7:
+
+
+    /*-----RAM READ MODE-----
+      Activates on RARD command from serial
+      Loops through entire RAM and outputs to serial
+    */
+    case 8:
+
+  }
+
+
+  digitalWrite(pin_sysclockOut, clockOut);
 }
