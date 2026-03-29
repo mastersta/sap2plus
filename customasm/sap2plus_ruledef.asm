@@ -622,7 +622,7 @@
 }
 
 INTVEC = 0x9F00
-RESETVEC = 0x80FF
+RESETVEC = 0x8100
 
 #addr RESETVEC ;testing reset vector placement
 
