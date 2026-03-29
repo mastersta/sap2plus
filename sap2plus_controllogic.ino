@@ -66,70 +66,81 @@ Adafruit_MCP23X17 mcp0;
 Adafruit_MCP23X17 mcp1;
 
 //instruction mnemonic definitions
-//input decoder (controller 0)
-#define II                 0x200000
-#define MI                 0x400000
-#define RI                 0x600000
-#define AI                 0x800000
-#define BI                 0xA00000
-#define XI                 0xC00000
-#define CI                 0xE00000
+//Decoders (controller 2)
+#define D1B3               0x800000
+#define D1B2               0x400000
+#define D1B1               0x200000
+#define D1B0               0x100000
 
-//output decoder (controller 0)
-#define RO                 0x040000
-#define AR                 0x080000
-#define LO                 0x0C0000
-#define EO                 0x100000
-#define XO                 0x140000
-#define PO                 0x180000
-#define FO                 0x1C0000
+  #define DI               D1B3|     D1B1
+  #define GI               D1B3|          D1B0
+  #define FL               D1B3
+  #define II                    D1B2|D1B1|D1B0
+  #define CI                    D1B2|D1B1
+  #define RI                    D1B2|     D1B0
+  #define MI                    D1B2         
+  #define XI                         D1B1|D1B0
+  #define BI                         D1B1     
+  #define AI                              D1B0
 
-//misc decoder (controller 0/1)
-#define CE                 0x008000
-#define COH                0x010000
-#define COL                0x018000
-#define FI                 0x020000
-#define TD                 0x028000
-#define SPARE1             0x030000
-#define SPARE2             0x038000
+#define D0B3               0x080000
+#define D0B2               0x040000
+#define D0B1               0x020000
+#define D0B0               0x010000
 
-//controller 1
-#define PI                 0x004000
-#define PD                 0x002000
-#define TC                 0x001000
-#define JU                 0x000800
+  #define OO               D0B3|D0B2
+  #define HO               D0B3|     D0B1|D0B0
+  #define GO               D0B3|     D0B1
+  #define PO               D0B3|          D0B0
+  #define FO               D0B3
+  #define COH                   D0B2|D0B1|D0B0
+  #define COL                   D0B2|D0B1
+  #define RO                    D0B2|     D0B0
+  #define AR                    D0B2        
+  #define EO                         D0B1|D0B0
+  #define LO                         D0B1    
+  #define XO                              D0B0
+
+//Flags/Interrupts/Stack (controller 1)
+#define PI                 0x008000
+#define PD                 0x004000
+#define TC                 0x002000
+#define TD                 0x001000
+#define CE                 0x000800
 #define FV                 0x000400
-#define F1                 0x000200
-#define F2                 0x000100
+#define F2                 0x000200
+#define F1                 0x000100
 
-//controller 2
-#define FL                 0x000080
-#define L3                 0x000040
-#define L2                 0x000020
-#define L1                 0x000010
-#define L0                 0x000008
-#define LC                 0x000004
-#define LM                 0x000002
-#define ES                 0x000001
+//Flags/ALU (controller 0)
+#define FI                 0x000080
+#define JU                 0x000040
+#define L3                 0x000020
+#define L2                 0x000010
+#define L1                 0x000008
+#define L0                 0x000004
+#define LC                 0x000002
+#define LM                 0x000001
 
 //ALU functions
-#define LDEC               0x00007C
-#define LSHL               0x000064
-#define LNEG               0x000062
-#define LAND               0x00005A
-#define BO                 0x000052
-#define LXOR               0x000032
-#define LSUB               0x000030
-#define LZRO               0x00001A
-#define LORA               0x00000C
-#define LADD               0x000008
-#define AO                 0x000004
-#define LNOT               0x000002
+#define AO                 L3|L2|L1|L0|   LM
+#define BO                 L3|   L1|      LM
+#define LADD               L3|      L0
+#define LSUB               L3|L2
+#define LDEC               L3|L2|L1|L0|LC 
+#define LNEG               L3|L2|         LM
+#define LNOT                              LM
+#define LAND               L3|   L1|L0|   LM
+#define LORA               L3|L2|L1|      LM
+#define LNND                  L2|         LM
+#define LNOR                        L0|   LM
+#define LXOR                  L2|L1|      LM
+#define LXNR               L3|      L0|   LM
+#define LZRO                     L1|L0|   LM
 
 //active-low inputs for each controller, to be xor'd later
 #define ctrl0_bar          0b00000000
-#define ctrl1_bar          0b01101000
-#define ctrl2_bar          0b00000000
+#define ctrl1_bar          0b11011000
+#define ctrl2_bar          0b00000010
 
 /*========================================
          instruction microcode
@@ -176,6 +187,7 @@ const long uinstr_template[128][13] PROGMEM {
 /*1b PLX      */ {MI|PI,          PO|MI,          RO|XI,          0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
 /*1c INX      */ {BI,             EO|XI,          0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
 /*1d DEX      */ {BI,             ES|EO|XI,       0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
+                //TODO:Get rid of SHL
 /*1e ROL      */ {LSHL|LO|AI|FI,  0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
 /*1f ROR      */ {AR|AI|FI,       0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
 /*                step 3          step 4          step 5          step 6          step 7          step 8          step 9          step A        step B            step C          step D          step E          step F          */
@@ -212,6 +224,7 @@ const long uinstr_template[128][13] PROGMEM {
 /*3b CPX abs  */ {COH|MI,         COL|MI|CE,      RO|BI,          COH|MI,         COL|MI|CE,      RO|MI,          BO|MI,          RO|BI,          ES|EO|BI,       BO|FI,          0,              0,              0               },
 /*3c INC abs  */ {COH|MI,         COL|MI|CE,      RO|BI,          COH|MI,         COL|MI|CE,      RO|MI,          BO|MI,          AO|BI,          RO|AI,          FL,             LADD|LO|RI|FI,  BO|AI,          0               },
 /*3d DEC abs  */ {COH|MI,         COL|MI|CE,      RO|BI,          COH|MI,         COL|MI|CE,      RO|MI,          BO|MI,          AO|BI,          RO|AI,          LDEC|LC|LO|RI|FI,  BO|AI,       0,              0               },
+//                                                                                                                                                                //TODO: get rid of SHL
 /*3e ROL abs  */ {COH|MI,         COL|MI|CE,      RO|BI,          COH|MI,         COL|MI|CE,      RO|MI,          BO|MI,          AO|BI,          RO|AI,          LSHL|LO|RI|FI,  BO|AI,          0,              0               },
 /*3f ROR abs  */ {COH|MI,         COL|MI|CE,      RO|BI,          COH|MI,         COL|MI|CE,      RO|MI,          BO|MI,          AO|BI,          RO|AI,          AR|RI|FI,       BO|AI,          0,              0               },
 /*                step 3          step 4          step 5          step 6          step 7          step 8          step 9          step A        step B            step C          step D          step E          step F          */
@@ -248,6 +261,7 @@ const long uinstr_template[128][13] PROGMEM {
 /*5b CPX zp   */ {COH|MI,         COL|MI|CE,      RO|BI,          LZRO|LO|MI,     BO|MI,          RO|BI,          ES|EO|BI,       BO|FI,          0,              0,              0,              0,              0               },
 /*5c INC zp   */ {COH|MI,         COL|MI|CE,      RO|BI,          LZRO|LO|MI,     BO|MI,          AO|BI,          RO|AI,          FL,             LADD|LO|RI|FI,  BO|AI,          0,              0,              0               },
 /*5d DEC zp   */ {COH|MI,         COL|MI|CE,      RO|BI,          LZRO|LO|MI,     BO|MI,          AO|BI,          RO|AI,          LDEC|LC|LO|RI|FI,  BO|AI,       0,              0,              0,              0               },
+//                                                                                                                              //TODO: Get rid of SHL
 /*5e ROL zp   */ {COH|MI,         COL|MI|CE,      RO|BI,          LZRO|LO|MI,     BO|MI,          AO|BI,          RO|AI,          LSHL|LO|RI|FI,  BO|AI,          0,              0,              0,              0               },
 /*5f ROR zp   */ {COH|MI,         COL|MI|CE,      RO|BI,          LZRO|LO|MI,     BO|MI,          AO|BI,          RO|AI,          AR|RI|FI,       BO|AI,          0,              0,              0,              0               },
 /*                step 3          step 4          step 5          step 6          step 7          step 8          step 9          step A        step B            step C          step D          step E          step F          */
@@ -266,6 +280,7 @@ const long uinstr_template[128][13] PROGMEM {
 /*6b          */ {0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
 /*6c INC abs,x*/ {COH|MI,         COL|MI|CE,      RO|BI,          COH|MI,         COL|MI|CE,      RO|MI,          EO|MI,          AO|BI,          RO|AI,          FL,             LADD|LO|RI|FI,  BO|AI,          0               },
 /*6d DEC abs,x*/ {COH|MI,         COL|MI|CE,      RO|BI,          COH|MI,         COL|MI|CI,      RO|MI,          EO|MI,          AO|BI,          RO|AI,          LDEC|LC|LO|RI|FI,  BO|AI,       0,              0               },
+//                                                                                                                                                              //TODO: Get rid of SHL
 /*6e ROL abs,x*/ {COH|MI,         COL|MI|CE,      RO|BI,          COH|MI,         COL|MI|CE,      RO|MI,          EO|MI,          AO|BI,          RO|AI,          LSHL|LO|RI|FI,  BO|AI,          0,              0               },
 /*6f ROR abs,x*/ {COH|MI,         COL|MI|CE,      RO|BI,          COH|MI,         COL|MI|CE,      RO|MI,          EO|MI,          AO|BI,          RO|AI,          AR|RI|FI,       BO|AI,          0,              0               },
 /*                step 3          step 4          step 5          step 6          step 7          step 8          step 9          step A        step B            step C          step D          step E          step F          */
@@ -284,9 +299,9 @@ const long uinstr_template[128][13] PROGMEM {
 /*7b          */ {0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
 /*7c INC zp,x */ {COH|MI,         COL|MI|CE,      RO|BI,          LZRO|LO|MI,     EO|MI,          AO|BI,          RO|AI,          BI,             LADD|LO|RI|FI,  BO|AI,          0,              0,              0               },
 /*7d DEC zp,x */ {COH|MI,         COL|MI|CE,      RO|BI,          LZRO|LO|MI,     EO|MI,          AO|BI,          RO|AI,          LDEC|LC|LO|RI|FI,  BO|AI,       0,              0,              0,              0               },
+//                                                                                                                              //TODO: Get rid of SHL
 /*7e ROL zp,x */ {COH|MI,         COL|MI|CE,      RO|BI,          LZRO|LO|MI,     EO|MI,          AO|BI,          RO|AI,          LSHL|LO|RI|FI,  BO|AI,          0,              0,              0,              0               },
 /*7f ROR zp,x */ {COH|MI,         COL|MI|CE,      RO|BI,          LZRO|LO|MI,     EO|MI,          AO|BI,          RO|AI,          AR|RI|FI,       BO|AI,          0,              0,              0,              0               },
-
 };
 
 long uinstr_table[128][13];
