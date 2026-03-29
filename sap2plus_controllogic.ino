@@ -25,41 +25,41 @@
 #define pin_sysclockSpeed  A3
 
 //pin assignments for port expanders
-//MCP23017_0
-#define PEpin_Y0           0
-#define PEpin_Y1           1
-#define PEpin_Y2           2
-#define PEpin_Z0           3
-#define PEpin_Z1           4
-#define PEpin_Z2           5
-#define PEpin_T0           6
-#define PEpin_T1           7
-#define PEpin_T2           8
-#define PEpin_PI           9
-#define PEpin_PD           10
-#define PEpin_TC           11
-#define PEpin_JU           12
-#define PEpin_FV           13
-#define PEpin_F1           14
-#define PEpin_F2           15
-                
 //MCP23017_1
-#define PEpin_FL           0
-#define PEpin_L3           1
-#define PEpin_L2           2
-#define PEpin_L1           3
-#define PEpin_L0           4
-#define PEpin_LC           5
-#define PEpin_LM           6
-#define PEpin_ES           7
-#define PEpin_data0        8
-#define PEpin_data1        9
-#define PEpin_data2        10
-#define PEpin_data3        11
-#define PEpin_data4        12
-#define PEpin_data5        13
-#define PEpin_data6        14
-#define PEpin_data7        15
+#define PEpin_D1B3         15
+#define PEpin_D1B2         14
+#define PEpin_D1B1         13
+#define PEpin_D1B0         12
+#define PEpin_D0B3         11
+#define PEpin_D0B2         10
+#define PEpin_D0B1         9
+#define PEpin_D0B0         8
+#define PEpin_PI           7
+#define PEpin_PD           6
+#define PEpin_TC           5
+#define PEpin_TD           4
+#define PEpin_CE           3
+#define PEpin_FV           2
+#define PEpin_F2           1
+#define PEpin_F1           0
+
+//MCP23017_0
+#define PEpin_FI           15
+#define PEpin_JU           14
+#define PEpin_L3           13
+#define PEpin_L2           12
+#define PEpin_L1           11
+#define PEpin_L0           10
+#define PEpin_LC           9
+#define PEpin_LM           8
+#define PEpin_data7        7
+#define PEpin_data6        6
+#define PEpin_data5        5
+#define PEpin_data4        4
+#define PEpin_data3        3
+#define PEpin_data2        2
+#define PEpin_data1        1
+#define PEpin_data0        0
 
 //MCP23017 stand-ins for control EEPROMS
 Adafruit_MCP23X17 mcp0;
