@@ -122,20 +122,21 @@ Adafruit_MCP23X17 mcp1;
 #define LM                 0x000001
 
 //ALU functions
-#define AO                 L3|L2|L1|L0|   LM
-#define BO                 L3|   L1|      LM
-#define LADD               L3|      L0
-#define LSUB               L3|L2
-#define LDEC               L3|L2|L1|L0|LC 
-#define LNEG               L3|L2|         LM
-#define LNOT                              LM
-#define LAND               L3|   L1|L0|   LM
-#define LORA               L3|L2|L1|      LM
-#define LNND                  L2|         LM
-#define LNOR                        L0|   LM
-#define LXOR                  L2|L1|      LM
-#define LXNR               L3|      L0|   LM
-#define LZRO                     L1|L0|   LM
+#define LNOT                              LM  //Negate A Register
+#define LNOR                        L0|   LM  //NOR A with B
+#define LZRO                     L1|L0|   LM  //Zero (output all zeros)
+#define LNND                  L2|         LM  //NAND A with B
+#define LXOR                  L2|L1|      LM  //XOR A with B
+#define LADD               L3|      L0        //Add A and B with carry in
+#define LXNR               L3|      L0|   LM  //XNOR A with B
+#define BO                 L3|   L1|      LM  //Output B Register
+#define LAND               L3|   L1|L0|   LM  //AND A with B
+#define LSUB               L3|L2              //Subtract B from A with carry in
+#define LNEG               L3|L2|         LM  //Output all ones (-1)
+#define LSHL               L3|L2|      LC     //Logical shift left A, no carry in unless instruction bit 7 is high
+#define LORA               L3|L2|L1|      LM  //OR A with B
+#define AO                 L3|L2|L1|L0|   LM  //Output A Register
+#define LDEC               L3|L2|L1|L0|LC     //Decrement A by one
 
 //active-low inputs for each controller, to be xor'd later
 #define ctrl0_bar          0b00000000
@@ -187,7 +188,6 @@ const long uinstr_template[128][13] PROGMEM {
 /*1b PLX      */ {MI|PI,          PO|MI,          RO|XI,          0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
 /*1c INX      */ {BI,             EO|XI,          0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
 /*1d DEX      */ {BI,             ES|EO|XI,       0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
-                //TODO:Get rid of SHL
 /*1e ROL      */ {LSHL|LO|AI|FI,  0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
 /*1f ROR      */ {AR|AI|FI,       0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
 /*                step 3          step 4          step 5          step 6          step 7          step 8          step 9          step A        step B            step C          step D          step E          step F          */
@@ -224,7 +224,6 @@ const long uinstr_template[128][13] PROGMEM {
 /*3b CPX abs  */ {COH|MI,         COL|MI|CE,      RO|BI,          COH|MI,         COL|MI|CE,      RO|MI,          BO|MI,          RO|BI,          ES|EO|BI,       BO|FI,          0,              0,              0               },
 /*3c INC abs  */ {COH|MI,         COL|MI|CE,      RO|BI,          COH|MI,         COL|MI|CE,      RO|MI,          BO|MI,          AO|BI,          RO|AI,          FL,             LADD|LO|RI|FI,  BO|AI,          0               },
 /*3d DEC abs  */ {COH|MI,         COL|MI|CE,      RO|BI,          COH|MI,         COL|MI|CE,      RO|MI,          BO|MI,          AO|BI,          RO|AI,          LDEC|LC|LO|RI|FI,  BO|AI,       0,              0               },
-//                                                                                                                                                                //TODO: get rid of SHL
 /*3e ROL abs  */ {COH|MI,         COL|MI|CE,      RO|BI,          COH|MI,         COL|MI|CE,      RO|MI,          BO|MI,          AO|BI,          RO|AI,          LSHL|LO|RI|FI,  BO|AI,          0,              0               },
 /*3f ROR abs  */ {COH|MI,         COL|MI|CE,      RO|BI,          COH|MI,         COL|MI|CE,      RO|MI,          BO|MI,          AO|BI,          RO|AI,          AR|RI|FI,       BO|AI,          0,              0               },
 /*                step 3          step 4          step 5          step 6          step 7          step 8          step 9          step A        step B            step C          step D          step E          step F          */
@@ -261,7 +260,6 @@ const long uinstr_template[128][13] PROGMEM {
 /*5b CPX zp   */ {COH|MI,         COL|MI|CE,      RO|BI,          LZRO|LO|MI,     BO|MI,          RO|BI,          ES|EO|BI,       BO|FI,          0,              0,              0,              0,              0               },
 /*5c INC zp   */ {COH|MI,         COL|MI|CE,      RO|BI,          LZRO|LO|MI,     BO|MI,          AO|BI,          RO|AI,          FL,             LADD|LO|RI|FI,  BO|AI,          0,              0,              0               },
 /*5d DEC zp   */ {COH|MI,         COL|MI|CE,      RO|BI,          LZRO|LO|MI,     BO|MI,          AO|BI,          RO|AI,          LDEC|LC|LO|RI|FI,  BO|AI,       0,              0,              0,              0               },
-//                                                                                                                              //TODO: Get rid of SHL
 /*5e ROL zp   */ {COH|MI,         COL|MI|CE,      RO|BI,          LZRO|LO|MI,     BO|MI,          AO|BI,          RO|AI,          LSHL|LO|RI|FI,  BO|AI,          0,              0,              0,              0               },
 /*5f ROR zp   */ {COH|MI,         COL|MI|CE,      RO|BI,          LZRO|LO|MI,     BO|MI,          AO|BI,          RO|AI,          AR|RI|FI,       BO|AI,          0,              0,              0,              0               },
 /*                step 3          step 4          step 5          step 6          step 7          step 8          step 9          step A        step B            step C          step D          step E          step F          */
@@ -280,7 +278,6 @@ const long uinstr_template[128][13] PROGMEM {
 /*6b          */ {0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
 /*6c INC abs,x*/ {COH|MI,         COL|MI|CE,      RO|BI,          COH|MI,         COL|MI|CE,      RO|MI,          EO|MI,          AO|BI,          RO|AI,          FL,             LADD|LO|RI|FI,  BO|AI,          0               },
 /*6d DEC abs,x*/ {COH|MI,         COL|MI|CE,      RO|BI,          COH|MI,         COL|MI|CI,      RO|MI,          EO|MI,          AO|BI,          RO|AI,          LDEC|LC|LO|RI|FI,  BO|AI,       0,              0               },
-//                                                                                                                                                              //TODO: Get rid of SHL
 /*6e ROL abs,x*/ {COH|MI,         COL|MI|CE,      RO|BI,          COH|MI,         COL|MI|CE,      RO|MI,          EO|MI,          AO|BI,          RO|AI,          LSHL|LO|RI|FI,  BO|AI,          0,              0               },
 /*6f ROR abs,x*/ {COH|MI,         COL|MI|CE,      RO|BI,          COH|MI,         COL|MI|CE,      RO|MI,          EO|MI,          AO|BI,          RO|AI,          AR|RI|FI,       BO|AI,          0,              0               },
 /*                step 3          step 4          step 5          step 6          step 7          step 8          step 9          step A        step B            step C          step D          step E          step F          */
@@ -299,7 +296,6 @@ const long uinstr_template[128][13] PROGMEM {
 /*7b          */ {0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
 /*7c INC zp,x */ {COH|MI,         COL|MI|CE,      RO|BI,          LZRO|LO|MI,     EO|MI,          AO|BI,          RO|AI,          BI,             LADD|LO|RI|FI,  BO|AI,          0,              0,              0               },
 /*7d DEC zp,x */ {COH|MI,         COL|MI|CE,      RO|BI,          LZRO|LO|MI,     EO|MI,          AO|BI,          RO|AI,          LDEC|LC|LO|RI|FI,  BO|AI,       0,              0,              0,              0               },
-//                                                                                                                              //TODO: Get rid of SHL
 /*7e ROL zp,x */ {COH|MI,         COL|MI|CE,      RO|BI,          LZRO|LO|MI,     EO|MI,          AO|BI,          RO|AI,          LSHL|LO|RI|FI,  BO|AI,          0,              0,              0,              0               },
 /*7f ROR zp,x */ {COH|MI,         COL|MI|CE,      RO|BI,          LZRO|LO|MI,     EO|MI,          AO|BI,          RO|AI,          AR|RI|FI,       BO|AI,          0,              0,              0,              0               },
 };
