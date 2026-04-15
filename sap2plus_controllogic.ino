@@ -145,9 +145,9 @@ Adafruit_MCP23X17 mcp1;
 
 /*========================================
          instruction microcode
-  step 0: COH|MI      [JTI]:MI         [INI]:TD|CI|JU
-  step 1: COL|MI      [JTI]:PO|MI|PD   [INI]:LZRO|LO|CI|JU
-  step 2: RO|II|CE    [JTI]:COL|RI     [INI]:RO|CE
+  step 0: COH|MI      [INI]:TD|CI|JU
+  step 1: COL|MI      [INI]:LZRO|LO|CI|JU
+  step 2: RO|II|CE    [INI]:RO|CE
           steps 3-15 follow:
 ========================================*/
 
@@ -162,7 +162,7 @@ const long uinstr_template[128][13] PROGMEM {
 /*04 CLI      */ {TC,             0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
 /*05 SEI      */ {TD,             0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
 /*06 RTS      */ {MI|PI,          PO|MI,          RO|CI|JU,       MI|CE|PI,       PO|MI,          RO|CI|JU,       RO|CE,          RO|CE,          0,              0,              0,              0,              0               },
-/*07 JTI      */ {MI,             PO|MI|PD,       COH|RI,         TD|MI,          LZRO|LO|MI,     RO|BI,          TD|MI,          MI,             RO|CI|JU,       BO|CI|JU,       0,              0,              0               },
+/*07 JTI      */ {OO|MI|TD,       PO|MI|PD,       COL|RI,         OO|MI,          PO|MI|PD,       COH|RI,         OO|MI,          LZRO|LO|MI,     RO|BI,          OO|MI,          OO|MI,          RO|CI|JU,       BO|CI|JU        },
 /*                step 3          step 4          step 5          step 6          step 7          step 8          step 9          step A        step B            step C          step D          step E          step F          */
 /*08 RTI      */ {PI|MI,          PO|MI,          RO|CI,          PI|MI,          PO|MI,          RO|CI|JU|TC,    0,              0,              0,              0,              0,              0,              0               },
 /*09          */ {0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0,              0               },
