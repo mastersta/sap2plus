@@ -67,7 +67,7 @@
   LNOR =              L0,     LM,   LO
   LZRO =          L1, L0,     LM,   LO
   LNND =      L2,             LM,   LO
-  LNTB =      L2,     L0,     LM,   LO  #TODO: Incorporate into invert memory value instructions
+  LNTB =      L2,     L0,     LM,   LO
   LXOR =      L2, L1,         LM,   LO
   LADD =  L3,         L0,           LO
   LXNR =  L3,         L0,     LM,   LO
@@ -407,15 +407,17 @@ TAD:1  		-> COH, MI
 TAD:2  		-> COL, MI
 TAD:3  		-> RO, II, CE
 
-#0x15  TODO:FIXME
-TCL:0  		-> COH, MI
-TCL:1  		-> COL, MI
-TCL:2  		-> RO, II, CE
+#0x15
+TCL:0     -> COL, AI
+TCL:1  		-> COH, MI
+TCL:2  		-> COL, MI
+TCL:3  		-> RO, II, CE
 
-#0x16  TODO:FIXME
-TCH:0  		-> COH, MI
-TCH:1  		-> COL, MI
-TCH:2  		-> RO, II, CE
+#0x16
+TCH:0     -> COH, AI
+TCH:1  		-> COH, MI
+TCH:2  		-> COL, MI
+TCH:3  		-> RO, II, CE
 
 #0x17
 INV:0  		-> LNOT, AI, FI
@@ -453,8 +455,8 @@ INX:3  		-> COL, MI
 INX:4  		-> RO, II, CE
 
 #0x1D
-DEX:0  		-> BI
-DEX:1  		-> ES, EO, XI #FIXME
+DEX:0  		-> LNEG, BI
+DEX:1  		-> EO, XI
 DEX:2  		-> COH, MI
 DEX:3  		-> COL, MI
 DEX:4  		-> RO, II, CE
@@ -554,11 +556,12 @@ CMPi:6  		-> RO, II, CE
 CPXi:0  		-> COH, MI
 CPXi:1  		-> COL, MI, CE
 CPXi:2  		-> RO, BI
-CPXi:3  		-> ES, EO, BI  #FIXME
-CPXi:4  		-> BO, FI
-CPXi:5  		-> COH, MI
-CPXi:6  		-> COL, MI
-CPXi:7  		-> RO, II, CE
+CPXi:3      -> LNTB, BI
+CPXi:4  		-> EO, BI
+CPXi:5  		-> BO, FI
+CPXi:6  		-> COH, MI
+CPXi:7  		-> COL, MI
+CPXi:8  		-> RO, II, CE
 
 #0x2C
 #empty
@@ -733,11 +736,12 @@ CPXabs:4  		-> COL, MI, CE
 CPXabs:5  		-> RO, MI
 CPXabs:6  		-> BO, MI
 CPXabs:7  		-> RO, BI
-CPXabs:8  		-> ES, EO, BI  #FIXME
-CPXabs:9  		-> BO, FI
-CPXabs:10 		-> COH, MI
-CPXabs:11 		-> COL, MI
-CPXabs:12 		-> RO, II, CE
+CPXabs:8      -> LNTB, BI
+CPXabs:9  		-> EO, BI
+CPXabs:10 		-> BO, FI
+CPXabs:11 		-> COH, MI
+CPXabs:12 		-> COL, MI
+CPXabs:13 		-> RO, II, CE
 
 #0x3C
 INCabs:0  		-> COH, MI
@@ -749,7 +753,7 @@ INCabs:5  		-> RO, MI
 INCabs:6  		-> BO, MI
 INCabs:7  		-> AO, BI
 INCabs:8  		-> RO, AI
-INCabs:9  		-> FL                  #TODO: FIXME?
+INCabs:9  		-> FL
 INCabs:10 		-> LADD, RI, FI
 INCabs:11 		-> BO, AI
 INCabs:12 		-> COH, MI
@@ -1076,7 +1080,7 @@ CMPzp:2  		-> RO, BI
 CMPzp:3  		-> LZRO, MI
 CMPzp:4  		-> BO, MI
 CMPzp:5  		-> RO, BI
-CMPzp:6  		-> FL               #TODO: FIXME?
+CMPzp:6  		-> FL
 CMPzp:7  		-> LSUB, LC, FI
 CMPzp:8  		-> COH, MI
 CMPzp:9  		-> COL, MI
@@ -1089,11 +1093,12 @@ CPXzp:2  		-> RO, BI
 CPXzp:3  		-> LZRO, MI
 CPXzp:4  		-> BO, MI
 CPXzp:5  		-> RO, BI
-CPXzp:6  		-> ES, EO, BI  #FIXME
-CPXzp:7  		-> BO, FI
-CPXzp:8  		-> COH, MI
-CPXzp:9  		-> COL, MI
-CPXzp:10 		-> RO, II, CE
+CPXzp:6     -> LNTB, BI
+CPXzp:7  		-> EO, BI
+CPXzp:8  		-> BO, FI
+CPXzp:9  		-> COH, MI
+CPXzp:10 		-> COL, MI
+CPXzp:11 		-> RO, II, CE
 
 #0x5C
 INCzp:0  		-> COH, MI
@@ -1103,7 +1108,7 @@ INCzp:3  		-> LZRO, MI
 INCzp:4  		-> BO, MI
 INCzp:5  		-> AO, BI
 INCzp:6  		-> RO, AI
-INCzp:7  		-> FL                  #TODO: FIXME?
+INCzp:7  		-> FL
 INCzp:8  		-> LADD, RI, FI
 INCzp:9  		-> BO, AI
 INCzp:10 		-> COH, MI
@@ -1297,7 +1302,7 @@ INCabsx:5  		-> RO, MI
 INCabsx:6  		-> EO, MI
 INCabsx:7  		-> AO, BI
 INCabsx:8  		-> RO, AI
-INCabsx:9  		-> FL                  #TODO: FIXME?
+INCabsx:9  		-> FL
 INCabsx:10 		-> LADD, RI, FI
 INCabsx:11 		-> BO, AI
 INCabsx:12 		-> COH, MI
