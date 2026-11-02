@@ -47,7 +47,7 @@
   TCL => 0x15
   TCH => 0x16
   INV => 0x17
-; empty
+  BKP => 0x18
 ; empty
   PHX => 0x1A
   PLX => 0x1B
