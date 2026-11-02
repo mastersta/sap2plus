@@ -61,6 +61,7 @@
   FL =  D1B3
   GI =  D1B3,             D1B0
   DI =  D1B3,       D1B1
+  BP =  D1B3,       D1B1, D1B0
 
 #ALU operations
   LNOT =                      LM,   LO
@@ -111,7 +112,7 @@
   TCL = 0x15
   TCH = 0x16
   INV = 0x17
-# empty
+  BKP = 0x18
 # empty
   PHX = 0x1A
   PLX = 0x1B
@@ -167,7 +168,7 @@
   BPLabs = 0x47
   BVSabs = 0x48
   BVCabs = 0x49
-#empty
+  JMPrel = 0x4A
 #empty
 #empty
 #empty
@@ -938,7 +939,16 @@ BVCabs:8  		-> COL, MI
 BVCabs:9  		-> RO, II, CE
 
 #0x4A
-#empty
+JMPrel:0      -> LZRO, MI
+JMPrel:1      -> LZRO, MI
+JMPrel:2      -> RO, BI
+JMPrel:3      -> LZRO, MI
+JMPrel:4      -> OO, MI
+JMPrel:5      -> RO, CI, JU
+JMPrel:6      -> BO, CI, JU
+JMPrel:7      -> COH, MI
+JMPrel:8      -> COL, MI
+JMPrel:9      -> RO, II, CE
 
 #0x4B
 #empty

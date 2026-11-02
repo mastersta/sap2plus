@@ -246,7 +246,7 @@
     assert(address <= 0xffff)
     0x49 @ le(address`16)
   }
-; empty
+  JMP rel => 0x4a
 ; empty
 ; empty
 ; empty
