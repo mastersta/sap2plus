@@ -38,3 +38,22 @@ register_xfrs:
   TXA             ;0000 0010 in A reg
   TAG             ;0000 0010 in GPIO output
   TAD             ;0000 0010 in DDR
+
+math:
+  sec             ;carry flag set
+  adc #1          ;0000 0011 in A reg, carry flag should clear
+  sec             ;carry flag set again
+  clc             ;carry flag clear
+  adc 0x0200      ;adds 1 from 0200, 0000 0100 in A reg after
+  adc 0x00        ;adds 1 from 0000, 0000 0101 in A reg after
+  ldx #1
+  adc 0x00,x      ;adds 2 from 0001, 0000 0111 in A reg after
+  sec
+  sbc #1          ;0000 0110 in A reg after
+  clc
+  sbc #1          ;0000 0011 in A reg after
+  sec
+  sbc 0x0200      ;0000 0010 in A reg after
+  sec
+  sbc 0x00        ;subs 1 from 0000, 0000 0001 in A reg after
+  
